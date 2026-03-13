@@ -57,7 +57,7 @@ export async function DELETE(
   const admin = (await import('@/lib/supabase/admin')).createAdminClient();
   const emails: string[] = [];
   if (admin && userIds.size > 0) {
-    for (const uid of userIds) {
+    for (const uid of Array.from(userIds)) {
       const { data: u } = await admin.auth.admin.getUserById(uid);
       if (u?.user?.email) emails.push(u.user.email);
     }
@@ -175,7 +175,7 @@ export async function PATCH(
     const admin = (await import('@/lib/supabase/admin')).createAdminClient();
     const emails: string[] = [];
     if (admin && userIds.size > 0) {
-      for (const uid of userIds) {
+      for (const uid of Array.from(userIds)) {
         const { data: u } = await admin.auth.admin.getUserById(uid);
         if (u?.user?.email) emails.push(u.user.email);
       }
