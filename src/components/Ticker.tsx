@@ -86,7 +86,7 @@ export default async function Ticker() {
 
   type CustomRow = { content: string; created_by?: string | null };
   const customRowsData = (customRows.data ?? []) as CustomRow[];
-  const createdByIds = [...new Set(customRowsData.map((r) => r.created_by).filter(Boolean))] as string[];
+  const createdByIds = Array.from(new Set(customRowsData.map((r) => r.created_by).filter(Boolean))) as string[];
   let createdByNames: Record<string, string> = {};
   if (createdByIds.length > 0) {
     const { data: profileRows } = await supabase.from('profiles').select('id, display_name').in('id', createdByIds);
