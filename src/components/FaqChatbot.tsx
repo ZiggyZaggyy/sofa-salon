@@ -66,7 +66,7 @@ const STATES: Record<StateId, State> = {
     messages_zh: [
       '【怎么用】',
       '首页选一场活动 → 点进去选座位。需要先登录，个人页里填好昵称和微信号才能选座。',
-      '可以带朋友，但朋友要自己来页面选座，没座位不能入场。',
+      '可以在座位图上帮朋友多选座位。',
       '取消座位：在活动页点你的头像，出现取消键，点一下就释放座位。',
       '',
       '【规则】',
@@ -74,12 +74,12 @@ const STATES: Record<StateId, State> = {
       '• 血条：临开场前取消、或被标记未出席，会掉一格。掉满三格会变成鸽子，需连续两次正常参加（管理员标记出席）才能恢复。',
       '• 改期要超过半数已报名者投票同意，管理员批准后生效。',
       '• 活动地址会在放映前发到你的邮箱和微信；请准时，迟到可能影响他人。',
-      '• 可以带零食，别带气味太重的；没有着装要求。',
+      '• 当然可以带零食来跟大家分享哟！带上你最喜欢的饮料和零食吧；别带气味太重的。没有着装要求。',
     ],
     messages_en: [
       '【How to use】',
       'Pick an event on the home page → open it and choose a seat. You need to log in and set your display name and WeChat in your profile first.',
-      'You can bring friends, but they must pick their own seat on the page. No seat, no entry.',
+      'You can claim extra seats for your friends on the seat map.',
       'To cancel: on the event page tap your avatar, then tap the cancel button to release your seat.',
       '',
       '【Rules】',
@@ -87,7 +87,7 @@ const STATES: Record<StateId, State> = {
       '• Blood bar: cancelling close to the event or being marked no-show loses a segment. Three strikes and you become a pigeon; you need two consecutive attended events (marked by admin) to recover.',
       '• Rescheduling needs a majority vote of registered attendees; admin approves the new time.',
       '• The address is sent by email and WeChat before the screening. Please be on time.',
-      '• Snacks OK; avoid strong smells. No dress code.',
+      '• Of course! Bring your favorite drinks and snacks to share. Avoid strong smells. No dress code.',
     ],
     options: [{ label_zh: '返回主菜单', label_en: 'Back to menu', next: 'ROOT' }],
   },
@@ -222,22 +222,26 @@ const STATES: Record<StateId, State> = {
     id: 'INFO_FRIEND',
     messages_zh: [
       '可以带朋友来。',
-      '但朋友需要自己在页面上选座。',
-      '没有座位不能入场。',
-      '请把活动页面链接发给你朋友。',
+      '你可以在座位图上帮朋友选座：点选空位即可为朋友占座。',
     ],
     messages_en: [
       'You can bring a friend.',
-      'Your friend needs to pick a seat on the page themselves.',
-      'No seat, no entry.',
-      'Send them the event page link.',
+      'You can claim extra seats for your friends on the seat map—tap an empty seat to reserve it for them.',
     ],
     options: [{ label_zh: '返回主菜单', label_en: 'Back to menu', next: 'ROOT' }],
   },
   INFO_SNACKS: {
     id: 'INFO_SNACKS',
-    messages_zh: ['欢迎带零食。', '请避免气味太重的食物。', '不要带榴莲。'],
-    messages_en: ['Snacks are welcome.', 'Avoid strong-smelling food.', 'No durian.'],
+    messages_zh: [
+      '当然可以带零食来跟大家分享哟！',
+      '带上你最喜欢的饮料和零食吧。',
+      '请避免气味太重的食物，榴莲达咩～',
+    ],
+    messages_en: [
+      'Of course! Bring snacks to share with everyone.',
+      'Bring your favorite drinks and snacks.',
+      'Avoid strong-smelling food (no durian).',
+    ],
     options: [{ label_zh: '返回主菜单', label_en: 'Back to menu', next: 'ROOT' }],
   },
   INFO_PUNCTUAL: {
@@ -596,7 +600,7 @@ export default function FaqChatbot() {
           animation: pigeonBob 2.5s ease-in-out infinite;
         }
         .faq-chatbot-btn:hover {
-          filter: drop-shadow(0 0 6px rgba(232,200,74,0.5));
+          filter: drop-shadow(0 0 6px rgba(45,212,191,0.5));
         }
         .faq-chatbot-pigeon-bounce {
           animation: pigeonClickBounce 0.45s ease-out;
@@ -639,7 +643,7 @@ export default function FaqChatbot() {
           setOpen((o) => !o);
           window.setTimeout(() => setPigeonBounce(false), 450);
         }}
-        className="faq-chatbot-btn fixed z-[50] border-0 bg-transparent shadow-none cursor-pointer p-0"
+        className="faq-chatbot-btn fixed z-[10000] border-0 bg-transparent shadow-none cursor-pointer p-0"
         style={{ bottom: 10, right: 20 }}
         aria-label={isZh ? '打开支持对话' : 'Open support chat'}
       >
@@ -657,7 +661,7 @@ export default function FaqChatbot() {
 
       {open && (
         <div
-          className="faq-chatbot-window fixed z-[50] flex flex-col border border-[#e8c84a] bg-[#0f0f0f]"
+          className="faq-chatbot-window fixed z-[10000] flex flex-col border border-[#2dd4bf] bg-[#0f0f0f]"
           style={{ borderRadius: 0 }}
         >
           <div
@@ -666,7 +670,7 @@ export default function FaqChatbot() {
           >
             <PigeonHead size={72} />
             <div className="flex flex-col min-w-0">
-              <p style={{ fontFamily: 'var(--font-pixel)', fontSize: 8, color: '#e8c84a' }}>SOFA PIGEON</p>
+              <p style={{ fontFamily: 'var(--font-pixel)', fontSize: 8, color: '#2dd4bf' }}>SOFA PIGEON</p>
               <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#555' }}>
                 {isZh ? '技术支持' : 'support'}
               </p>
@@ -674,7 +678,7 @@ export default function FaqChatbot() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="ml-auto font-mono text-base text-[#555] hover:text-[#e8c84a] transition-colors"
+              className="ml-auto font-mono text-base text-[#555] hover:text-[#2dd4bf] transition-colors"
               aria-label={isZh ? '关闭' : 'Close'}
             >
               ×
@@ -727,7 +731,7 @@ export default function FaqChatbot() {
                   <>
                     {rescheduleOptions && rescheduleOptions.length > 0 && (
                       <div>
-                        <p className="text-[#e8c84a] mb-1.5">{isZh ? '已有选项（可多选）' : 'Existing options (multi-select)'}</p>
+                        <p className="text-[#2dd4bf] mb-1.5">{isZh ? '已有选项（可多选）' : 'Existing options (multi-select)'}</p>
                         <div className="flex flex-col gap-1">
                           {rescheduleOptions.map((o) => (
                             <label key={o.id} className="flex items-center gap-2 text-[#e8e4dc] cursor-pointer">
@@ -748,7 +752,7 @@ export default function FaqChatbot() {
                     )}
                     {rescheduleOptionCount < 5 && (
                       <div>
-                        <p className="text-[#e8c84a] mb-1.5">
+                        <p className="text-[#2dd4bf] mb-1.5">
                           {isZh ? '新增时间（日期 + 时段）' : 'Add new (date + time slot)'}
                         </p>
                         <div className="flex flex-col gap-2">
@@ -790,7 +794,7 @@ export default function FaqChatbot() {
                       type="button"
                       onClick={submitReschedule}
                       disabled={rescheduleSubmitting || (rescheduleNewSlots.every((s) => !s.date?.trim()) && rescheduleVoteIds.length === 0)}
-                      className="mt-2 w-full font-mono text-[11px] border border-[#e8c84a] bg-[#161616] text-[#e8c84a] hover:bg-[#e8c84a] hover:text-[#0f0f0f] transition-colors py-2"
+                      className="mt-2 w-full font-mono text-[11px] border border-[#2dd4bf] bg-[#161616] text-[#2dd4bf] hover:bg-[#2dd4bf] hover:text-[#0f0f0f] transition-colors py-2"
                     >
                       {rescheduleSubmitting ? (isZh ? '提交中…' : 'Submitting…') : isZh ? '提交' : 'Submit'}
                     </button>
@@ -806,7 +810,7 @@ export default function FaqChatbot() {
                     key={i}
                     type="button"
                     onClick={() => onSelect(getLabel(opt), opt.next, opt.value)}
-                    className="w-full text-left font-mono text-[11px] text-[#e8e4dc] border border-[#2a2a2a] bg-[#161616] hover:border-[#e8c84a] hover:text-[#e8c84a] transition-colors flex items-center justify-between gap-2"
+                    className="w-full text-left font-mono text-[11px] text-[#e8e4dc] border border-[#2a2a2a] bg-[#161616] hover:border-[#2dd4bf] hover:text-[#2dd4bf] transition-colors flex items-center justify-between gap-2"
                     style={{ padding: '8px 12px', borderRadius: 0 }}
                   >
                     <span className="min-w-0 truncate">{getLabel(opt)}</span>
