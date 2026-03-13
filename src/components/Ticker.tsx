@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { APP_NAME_PARTS } from '@/lib/config';
 import type { Locale } from '@/lib/i18n';
+import TickerStrip, { type TickerSegmentItem } from '@/components/TickerStrip';
 
 const COOKIE_NAME = 'sofa-salon-locale';
 
@@ -19,36 +20,13 @@ const FALLBACK_STATIC_ZH = [
   '不见不散',
 ];
 
-/** 时间用本地显示（与 movie card 一致），观众和 host 同地，本地时间即 host 设置的时间。 */
-function timeAndDateFromScreeningAt(iso: string): { timeStr: string; dateStrEn: string; dateStrZh: string; date: Date } {
-  const date = new Date(iso);
-  const timeStr = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  const datePart = typeof iso === 'string' && iso.length >= 10 ? iso.slice(0, 10) + 'T12:00:00Z' : iso;
-  const dateForDisplay = new Date(datePart);
-  const dateStrEn = dateForDisplay.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', weekday: 'short' });
-  const dateStrZh = dateForDisplay.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
-  return { timeStr, dateStrEn, dateStrZh, date };
-}
-
-/** Build ticker segments for upcoming screenings only (no past events, no seat counts). */
-function buildEventSegments(screenings: any[], locale: Locale): string[] {
-  const segments: string[] = [];
-  const isZh = locale === 'zh';
-  for (const s of screenings) {
-    const { timeStr, dateStrEn, dateStrZh, date } = timeAndDateFromScreeningAt(s.screening_at);
-    const now = new Date();
-    const diffHours = Math.round((date.getTime() - now.getTime()) / 36e5);
-    const diffDays = Math.round(diffHours / 24);
-    const dateStr = isZh ? dateStrZh : dateStrEn;
-    if (diffHours < 3) {
-      segments.push(isZh ? `今晚 · ${timeStr} · ${s.title}` : `TONIGHT · ${timeStr} · ${s.title}`);
-      segments.push(isZh ? `即将开始 · ${s.title}` : `STARTING SOON · ${s.title}`);
-    } else if (diffHours < 8) segments.push(isZh ? `今天 · ${timeStr} · ${s.title}` : `TODAY · ${timeStr} · ${s.title}`);
-    else if (diffDays < 2) segments.push(isZh ? `明天 · ${timeStr} · ${s.title}` : `TOMORROW · ${timeStr} · ${s.title}`);
-    else if (diffDays < 7) segments.push(isZh ? `即将放映 · ${dateStr} · ${s.title}` : `UPCOMING · ${dateStr} · ${s.title}`);
-    else segments.push(isZh ? `敬请期待 · ${dateStr} · ${s.title}` : `COMING SOON · ${dateStr} · ${s.title}`);
-  }
-  return segments;
+/** Event segments are built on the client so time uses the viewer's timezone (fixes deploy/server UTC). */
+function buildEventSegmentItems(screenings: { screening_at: string; title: string }[]): TickerSegmentItem[] {
+  return screenings.map((s) => ({
+    type: 'event' as const,
+    screening_at: s.screening_at,
+    title: s.title,
+  }));
 }
 
 /** One segment for the most recent past screening, e.g. "谢谢大家观看《少年派》". */
@@ -118,8 +96,8 @@ export default async function Ticker() {
   const fallback = locale === 'zh' ? FALLBACK_STATIC_ZH : FALLBACK_STATIC_EN;
   const baseSegments = customSegments.length > 0 ? customSegments : fallback;
 
-  const screenings = screeningsRes.data ?? [];
-  const eventSegments = showUpcoming ? buildEventSegments(screenings, locale) : [];
+  const screenings = (screeningsRes.data ?? []) as { screening_at: string; title: string }[];
+  const eventSegmentItems = showUpcoming ? buildEventSegmentItems(screenings) : [];
   const pastThankYouSegments = showPastEventThankYou ? buildPastThankYouSegment(pastScreeningRes.data as { title: string } | null, locale) : [];
 
   let ratingSegments: string[] = [];
@@ -172,9 +150,16 @@ export default async function Ticker() {
     : [];
 
   /** Round-robin interleave so we avoid long runs of the same type (e.g. many "upcoming" in a row). */
-  const buckets: string[][] = [baseSegments, eventSegments, pastThankYouSegments, ratingSegments, systemEventSegments, userSegments].filter((b) => b.length > 0);
+  const buckets: TickerSegmentItem[][] = [
+    baseSegments,
+    eventSegmentItems,
+    pastThankYouSegments,
+    ratingSegments,
+    systemEventSegments,
+    userSegments,
+  ].filter((b) => b.length > 0);
   const indices = buckets.map(() => 0);
-  const merged: string[] = [];
+  const merged: TickerSegmentItem[] = [];
   const total = buckets.reduce((s, b) => s + b.length, 0);
   while (merged.length < total) {
     for (let b = 0; b < buckets.length; b++) {
@@ -184,35 +169,11 @@ export default async function Ticker() {
     }
   }
 
-  const allSegments = merged.length > 0 ? merged : [...baseSegments, ...eventSegments, ...pastThankYouSegments, ...ratingSegments, ...systemEventSegments];
-  const loopSegments = allSegments.length > 0 ? [...allSegments, ...allSegments] : [...fallback, ...fallback];
-
   return (
-    <div
-      className="ticker-wrap"
-      style={{
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        userSelect: 'none',
-      }}
-    >
-      <div className="animate-ticker" style={{ display: 'inline-block' }}>
-        {loopSegments.map((seg, i) => (
-          <span
-            key={i}
-            className="ticker-text"
-            style={{
-              fontSize: 12,
-              letterSpacing: 2,
-              textTransform: 'uppercase',
-              padding: '0 40px',
-            }}
-          >
-            {seg}
-            <span style={{ opacity: 0.6, padding: '0 8px' }}>·</span>
-          </span>
-        ))}
-      </div>
-    </div>
+    <TickerStrip
+      segmentItems={merged.length > 0 ? merged : [...baseSegments, ...eventSegmentItems, ...pastThankYouSegments, ...ratingSegments, ...systemEventSegments]}
+      locale={locale}
+      fallback={fallback}
+    />
   );
 }
