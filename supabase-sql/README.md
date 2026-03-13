@@ -23,5 +23,6 @@
 | `12-reservations-friend-avatar.sql` | reservations 增加 friend_avatar（朋友座随机样子，本人座无血条） | 需要“再占一座”显示朋友样式时跑一次 |
 | `15-ticker-custom-created-by.sql` | ticker_custom 增加 created_by（管理员发的跑马灯显示「放映人 名字：内容」） | 需要跑马灯显示管理员署名时跑一次 |
 | `16-ticker-system-events.sql` | ticker_system_events（活动取消/改期系统通知，约 3 天有效）+ ticker_config 默认 show_reschedule_cancel_ticker | 需要管理员删除/改期活动并显示跑马灯通知时跑一次 |
+| `17-waitlist-manual-promote-one.sql` | 查询 + 模板：手动把「已 promoted 但未写入 reservations」的候补补进预约表 | 仅当历史数据需修复时按说明执行（非建表） |
 
 在 Supabase 控制台 → **SQL Editor** 里打开对应文件，复制内容执行即可。

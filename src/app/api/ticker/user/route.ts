@@ -16,7 +16,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'content required' }, { status: 400 });
   }
 
-  const { data, error } = await supabase
+  // Use service role so insert always succeeds (avoids RLS/cookie issues in server context)
+  const admin = (await import('@/lib/supabase/admin')).createAdminClient();
+  const client = admin ?? supabase;
+  const { data, error } = await client
     .from('ticker_user_messages')
     .insert({ user_id: user.id, content, is_active: true })
     .select('id, content, created_at')

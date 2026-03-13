@@ -70,7 +70,7 @@ export default async function Ticker() {
     supabase.from('ticker_custom').select('content, created_by').eq('is_active', true).order('sort_order', { ascending: true }),
     supabase.from('screenings').select('title, screening_at').eq('is_active', true).gte('screening_at', nowIso).order('screening_at', { ascending: true }).limit(5),
     supabase.from('screenings').select('id, title').lt('screening_at', nowIso).order('screening_at', { ascending: false }).limit(10),
-    supabase.from('ticker_user_messages').select('content, profiles(display_name)').eq('is_active', true).order('created_at', { ascending: true }),
+    supabase.from('ticker_user_messages').select('content, user_id').eq('is_active', true).order('created_at', { ascending: true }),
     supabase.from('screenings').select('title').eq('is_active', true).lt('screening_at', nowIso).order('screening_at', { ascending: false }).limit(1).maybeSingle(),
     supabase.from('ticker_system_events').select('type, title').gt('expires_at', nowIso).order('created_at', { ascending: false }),
   ]);
@@ -137,9 +137,18 @@ export default async function Ticker() {
     }
   }
 
-  const userRows = (userMessagesRes.data ?? []) as Array<{ content: string; profiles: { display_name: string } | null }>;
+  const userRows = (userMessagesRes.data ?? []) as Array<{ content: string; user_id: string }>;
+  const userIds = Array.from(new Set(userRows.map((r) => r.user_id).filter(Boolean)));
+  let userDisplayNames: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const { data: profileRows } = await supabase.from('profiles').select('id, display_name').in('id', userIds);
+    for (const p of profileRows ?? []) {
+      const row = p as { id: string; display_name: string | null };
+      if (row.display_name) userDisplayNames[row.id] = row.display_name;
+    }
+  }
   const userSegments = userRows
-    .map((r) => `${r.profiles?.display_name ?? '—'}：${r.content}`)
+    .map((r) => `${userDisplayNames[r.user_id] ?? '—'}：${r.content}`)
     .filter((s) => s.length > 0);
 
   type SystemEventRow = { type: string; title: string };

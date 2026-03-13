@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
       .eq('screening_id', screening.id)
       .or('is_ghost.eq(false),is_ghost.is.null');
 
-    const userIds = [...new Set((reservations ?? []).map((r: { user_id: string }) => r.user_id))];
+    const userIds = Array.from(new Set((reservations ?? []).map((r: { user_id: string }) => r.user_id)));
     const screeningAt = new Date(screening.screening_at).toLocaleString();
 
     for (const userId of userIds) {

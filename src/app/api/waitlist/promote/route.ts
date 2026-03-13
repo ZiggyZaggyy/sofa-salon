@@ -46,28 +46,31 @@ export async function POST(req: NextRequest) {
     .eq('id', screeningId)
     .single();
 
-  await supabase.from('reservations').insert({
+  const admin = (await import('@/lib/supabase/admin')).createAdminClient();
+  if (!admin) {
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+  }
+
+  const { error: insertError } = await admin.from('reservations').insert({
     screening_id: screeningId,
     user_id: entry.user_id,
     seat_key: seatKey,
     is_squeezed: false,
   });
 
-  await supabase
-    .from('waitlist')
-    .update({ status: 'promoted' })
-    .eq('id', waitlistId);
+  if (insertError) {
+    return NextResponse.json({ error: insertError.message }, { status: 400 });
+  }
 
-  await supabase.rpc('reorder_waitlist', {
+  await admin.from('waitlist').update({ status: 'promoted' }).eq('id', waitlistId);
+
+  await admin.rpc('reorder_waitlist', {
     p_screening_id: screeningId,
   });
 
-  const admin = (await import('@/lib/supabase/admin')).createAdminClient();
   let email: string | undefined;
-  if (admin) {
-    const { data: userData } = await admin.auth.admin.getUserById(entry.user_id);
-    email = userData?.user?.email;
-  }
+  const { data: userData } = await admin.auth.admin.getUserById(entry.user_id);
+  email = userData?.user?.email;
   if (email && screening) {
     try {
       await sendWaitlistPromotion({

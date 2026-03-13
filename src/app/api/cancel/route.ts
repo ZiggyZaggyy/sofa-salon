@@ -108,48 +108,57 @@ export async function POST(req: NextRequest) {
   }
 
   if (screening?.waitlist_mode === 'auto') {
-    const { data: first } = await supabase
-      .from('waitlist')
-      .select('id, user_id')
-      .eq('screening_id', screeningId)
-      .eq('status', 'waiting')
-      .order('position', { ascending: true })
-      .limit(1)
-      .single();
+    const adminForPromote = (await import('@/lib/supabase/admin')).createAdminClient();
+    const { data: first } = adminForPromote
+      ? await adminForPromote
+          .from('waitlist')
+          .select('id, user_id')
+          .eq('screening_id', screeningId)
+          .eq('status', 'waiting')
+          .order('position', { ascending: true })
+          .limit(1)
+          .single()
+      : await supabase
+          .from('waitlist')
+          .select('id, user_id')
+          .eq('screening_id', screeningId)
+          .eq('status', 'waiting')
+          .order('position', { ascending: true })
+          .limit(1)
+          .single();
 
-    if (first) {
-      await supabase.from('reservations').insert({
+    if (first && adminForPromote) {
+      const { error: insertError } = await adminForPromote.from('reservations').insert({
         screening_id: screeningId,
         user_id: first.user_id,
         seat_key: freedSeatKey,
         is_squeezed: false,
       });
 
-      await supabase
-        .from('waitlist')
-        .update({ status: 'promoted' })
-        .eq('id', first.id);
+      if (!insertError) {
+        await adminForPromote
+          .from('waitlist')
+          .update({ status: 'promoted' })
+          .eq('id', first.id);
 
-      await supabase.rpc('reorder_waitlist', {
-        p_screening_id: screeningId,
-      });
+        await adminForPromote.rpc('reorder_waitlist', {
+          p_screening_id: screeningId,
+        });
 
-      const admin = (await import('@/lib/supabase/admin')).createAdminClient();
-      let email: string | undefined;
-      if (admin) {
-        const { data: userData } = await admin.auth.admin.getUserById(first.user_id);
+        let email: string | undefined;
+        const { data: userData } = await adminForPromote.auth.admin.getUserById(first.user_id);
         email = userData?.user?.email;
-      }
-      if (email) {
-        try {
-          await sendWaitlistPromotion({
-            to: email,
-            screeningTitle: screening.title,
-            seatKey: freedSeatKey,
-            screeningAt: new Date(screening.screening_at).toLocaleString(),
-          });
-        } catch {
-          // ignore
+        if (email) {
+          try {
+            await sendWaitlistPromotion({
+              to: email,
+              screeningTitle: screening.title,
+              seatKey: freedSeatKey,
+              screeningAt: new Date(screening.screening_at).toLocaleString(),
+            });
+          } catch {
+            // ignore
+          }
         }
       }
     }
