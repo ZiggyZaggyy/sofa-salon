@@ -61,6 +61,7 @@ export default async function ScreeningPage({
     decorations_json: unknown;
     canvas_w: number;
     canvas_h: number;
+    room_background_id?: string | null;
   };
   const furniture = (room.furniture_json as Array<unknown>) ?? [];
   const decorations = (room.decorations_json as Array<unknown>) ?? [];
@@ -172,7 +173,7 @@ export default async function ScreeningPage({
             decorations: decorations as Parameters<typeof SeatMap>[0]['room']['decorations'],
             canvasW: room.canvas_w ?? 600,
             canvasH: room.canvas_h ?? 400,
-            roomBackgroundId,
+            roomBackgroundId: room.room_background_id ?? 'warm',
           }}
           squeezeNote={screening.squeeze_note}
           initialReservations={(reservations ?? []) as unknown as Parameters<typeof SeatMap>[0]['initialReservations']}
