@@ -19,18 +19,26 @@ const FALLBACK_STATIC_ZH = [
   '不见不散',
 ];
 
+/** 时间用本地显示（与 movie card 一致），观众和 host 同地，本地时间即 host 设置的时间。 */
+function timeAndDateFromScreeningAt(iso: string): { timeStr: string; dateStrEn: string; dateStrZh: string; date: Date } {
+  const date = new Date(iso);
+  const timeStr = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const datePart = typeof iso === 'string' && iso.length >= 10 ? iso.slice(0, 10) + 'T12:00:00Z' : iso;
+  const dateForDisplay = new Date(datePart);
+  const dateStrEn = dateForDisplay.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', weekday: 'short' });
+  const dateStrZh = dateForDisplay.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
+  return { timeStr, dateStrEn, dateStrZh, date };
+}
+
 /** Build ticker segments for upcoming screenings only (no past events, no seat counts). */
 function buildEventSegments(screenings: any[], locale: Locale): string[] {
   const segments: string[] = [];
   const isZh = locale === 'zh';
   for (const s of screenings) {
-    const date = new Date(s.screening_at);
+    const { timeStr, dateStrEn, dateStrZh, date } = timeAndDateFromScreeningAt(s.screening_at);
     const now = new Date();
     const diffHours = Math.round((date.getTime() - now.getTime()) / 36e5);
     const diffDays = Math.round(diffHours / 24);
-    const timeStr = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    const dateStrEn = date.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', weekday: 'short' });
-    const dateStrZh = date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
     const dateStr = isZh ? dateStrZh : dateStrEn;
     if (diffHours < 3) {
       segments.push(isZh ? `今晚 · ${timeStr} · ${s.title}` : `TONIGHT · ${timeStr} · ${s.title}`);

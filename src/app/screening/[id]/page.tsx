@@ -39,7 +39,8 @@ export default async function ScreeningPage({
           furniture_json,
           decorations_json,
           canvas_w,
-          canvas_h
+          canvas_h,
+          room_background_id
         )
       `)
       .eq('id', id)
@@ -171,6 +172,7 @@ export default async function ScreeningPage({
             decorations: decorations as Parameters<typeof SeatMap>[0]['room']['decorations'],
             canvasW: room.canvas_w ?? 600,
             canvasH: room.canvas_h ?? 400,
+            roomBackgroundId,
           }}
           squeezeNote={screening.squeeze_note}
           initialReservations={(reservations ?? []) as unknown as Parameters<typeof SeatMap>[0]['initialReservations']}

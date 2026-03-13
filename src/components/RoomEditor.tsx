@@ -6,6 +6,7 @@ import {
   FurnitureType,
   newFurniturePiece,
   roomCapacity,
+  ROOM_BACKGROUND_PRESETS,
   SEAT_RULES,
   canSqueeze,
   type Decoration,
@@ -33,6 +34,9 @@ interface Props {
   canvasW: number;
   canvasH: number;
   onSave: (furniture: FurniturePiece[], decorations: Decoration[]) => void | Promise<void>;
+  /** When provided (e.g. in admin), canvas background uses this preset and shows room background row above furniture tools */
+  roomBackgroundId?: string;
+  onRoomBackgroundChange?: (id: string) => void;
 }
 
 export default function RoomEditor({
@@ -41,6 +45,8 @@ export default function RoomEditor({
   canvasW,
   canvasH,
   onSave,
+  roomBackgroundId,
+  onRoomBackgroundChange,
 }: Props) {
   const [furniture, setFurniture] = useState<FurniturePiece[]>(initialFurniture);
   const [decorations, setDecorations] = useState<Decoration[]>(initialDecorations);
@@ -176,8 +182,15 @@ export default function RoomEditor({
   const selected = furniture.find((f) => f.id === selectedId);
   const selectedDeco = decorations.find((d) => d.id === selectedDecoId);
   const capacity = roomCapacity(furniture);
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const re = t.admin.roomEditor;
+  const isZh = locale === 'zh';
+  const bgPreset = roomBackgroundId
+    ? ROOM_BACKGROUND_PRESETS.find((p) => p.id === roomBackgroundId)
+    : null;
+  const canvasFill = bgPreset?.fill ?? '#2a2218';
+  const canvasLineFill = bgPreset?.lineFill ?? '#252015';
+  const showRoomBackgroundRow = roomBackgroundId != null && onRoomBackgroundChange != null;
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -186,7 +199,31 @@ export default function RoomEditor({
         {re.worksBest}
       </div>
 
-      {/* Row 2: Furniture + Decor horizontal strip (1–2 rows, scrollable) */}
+      {/* Row: Room background (admin only, above furniture tools) */}
+      {showRoomBackgroundRow && (
+        <div className="shrink-0 border-b border-[#2a2a2a] bg-[#161616] px-3 py-2">
+          <div className="flex items-center gap-2 flex-nowrap">
+            <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] shrink-0">
+              {t.admin.roomBackground}
+            </span>
+            <select
+              value={roomBackgroundId}
+              onChange={(e) => onRoomBackgroundChange(e.target.value)}
+              className="bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-2 py-1.5 outline-none focus:border-[#e8c84a] shrink-0"
+              style={{ borderRadius: 0 }}
+              aria-label={t.admin.roomBackground}
+            >
+              {ROOM_BACKGROUND_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {isZh ? p.name_zh : p.name_en}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Row: Furniture + Decor horizontal strip (1–2 rows, scrollable) */}
       <div className="shrink-0 border-b border-[#2a2a2a] bg-[#161616] overflow-x-auto">
         <div className="p-3 flex flex-col gap-2 min-w-0">
           <div className="flex items-center gap-2 flex-nowrap">
@@ -260,10 +297,13 @@ export default function RoomEditor({
         </div>
       </div>
 
-      {/* Row 3: Room view (smaller) + Save Room panel */}
+      {/* Row: Room view (smaller) + Save Room panel */}
       <div className="flex-1 flex flex-col md:flex-row gap-0 min-h-0">
         {/* Canvas: fills available height, no scrollbar; SVG scales to fit */}
-        <div className="flex-1 overflow-hidden bg-[#2a2218] relative min-h-[200px]">
+        <div
+          className="flex-1 overflow-hidden relative min-h-[200px]"
+          style={{ backgroundColor: canvasFill }}
+        >
           <svg
             ref={svgRef}
             viewBox={`0 0 ${canvasW} ${canvasH}`}
@@ -280,7 +320,7 @@ export default function RoomEditor({
               }
             }}
           >
-          <rect width={canvasW} height={canvasH} fill="#2a2218" />
+          <rect width={canvasW} height={canvasH} fill={canvasFill} />
           {Array.from({ length: Math.floor(canvasH / 40) }, (_, i) => (
             <line
               key={`h-${i}`}
@@ -288,7 +328,7 @@ export default function RoomEditor({
               y1={(i + 1) * 40}
               x2={canvasW}
               y2={(i + 1) * 40}
-              stroke="#252015"
+              stroke={canvasLineFill}
               strokeWidth={1}
             />
           ))}
@@ -299,7 +339,7 @@ export default function RoomEditor({
               y1={0}
               x2={(i + 1) * 40}
               y2={canvasH}
-              stroke="#252015"
+              stroke={canvasLineFill}
               strokeWidth={1}
             />
           ))}

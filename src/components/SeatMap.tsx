@@ -12,6 +12,7 @@ import {
   canSqueeze,
   getFurnitureFocusBox,
   seatKeyToDisplayLabel,
+  ROOM_BACKGROUND_PRESETS,
 } from '@/lib/furniture';
 import { jsonToConfig, avatarConfigFromSeed } from '@/lib/avatar';
 import FurnitureSVG from '@/components/FurnitureSVG';
@@ -53,6 +54,8 @@ interface SeatMapProps {
     decorations: Decoration[];
     canvasW: number;
     canvasH: number;
+    /** 房间背景预设 id，由 host 在「修改房间」中设置 */
+    roomBackgroundId?: string | null;
   };
   squeezeNote: string | null;
   initialReservations: Reservation[];
@@ -83,6 +86,12 @@ export default function SeatMap({
 }: SeatMapProps) {
   const router = useRouter();
   const { t, locale } = useLocale();
+  const isZh = locale === 'zh';
+  const roomBackgroundId = room.roomBackgroundId ?? 'warm';
+  const roomBgPreset = useMemo(
+    () => ROOM_BACKGROUND_PRESETS.find((p) => p.id === roomBackgroundId) ?? ROOM_BACKGROUND_PRESETS[0],
+    [roomBackgroundId]
+  );
   const [reservations, setReservations] = useState<Reservation[]>(initialReservations);
   const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>(initialWaitlist);
 
@@ -148,8 +157,13 @@ export default function SeatMap({
     const update = () => {
       if (!containerRef.current) return;
       const width = containerRef.current.offsetWidth;
-      if (isMobile && furnitureFocusBox) {
-        setScale(width / furnitureFocusBox.w);
+      const height = containerRef.current.offsetHeight;
+      if (furnitureFocusBox) {
+        // Zoom to furniture bounds on both mobile and desktop: center the room and make it larger
+        const scaleByWidth = width / furnitureFocusBox.w;
+        const scaleByHeight = height / furnitureFocusBox.h;
+        const s = Math.min(scaleByWidth, scaleByHeight);
+        setScale(s);
         setOffsetX(furnitureFocusBox.minX);
         setOffsetY(furnitureFocusBox.minY);
       } else {
@@ -162,7 +176,7 @@ export default function SeatMap({
     const ro = new ResizeObserver(update);
     if (containerRef.current) ro.observe(containerRef.current);
     return () => ro.disconnect();
-  }, [room.canvasW, isMobile, furnitureFocusBox]);
+  }, [room.canvasW, furnitureFocusBox]);
 
   const pendingReservationsUpdate = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingWaitlistUpdate = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -545,14 +559,14 @@ export default function SeatMap({
             flex: isMobile ? undefined : 1,
             minWidth: 0,
             aspectRatio:
-              isMobile && furnitureFocusBox
+              furnitureFocusBox
                 ? `${furnitureFocusBox.w}/${furnitureFocusBox.h}`
                 : `${room.canvasW}/${room.canvasH}`,
           }}
         >
         <svg
           viewBox={
-            isMobile && furnitureFocusBox
+            furnitureFocusBox
               ? `${furnitureFocusBox.minX} ${furnitureFocusBox.minY} ${furnitureFocusBox.w} ${furnitureFocusBox.h}`
               : `0 0 ${room.canvasW} ${room.canvasH}`
           }
@@ -563,7 +577,7 @@ export default function SeatMap({
           <rect
             width={room.canvasW}
             height={room.canvasH}
-            fill="#2a2218"
+            fill={roomBgPreset.fill}
           />
           {Array.from({ length: Math.max(1, Math.ceil(room.canvasH / 40)) }, (_, i) => (
             <rect
@@ -572,7 +586,7 @@ export default function SeatMap({
               y={(i + 1) * 40}
               width={room.canvasW}
               height={1}
-              fill="#252015"
+              fill={roomBgPreset.lineFill}
             />
           ))}
           {/* Rug at bottom, then furniture, then other decorations */}
@@ -691,8 +705,8 @@ export default function SeatMap({
                   disabled={loading || (pendingSeatKeys.includes(seatKey) ? false : pendingSeatKeys.length >= MAX_PENDING_SEATS)}
                   className={`border-2 border-dashed bg-transparent flex items-center justify-center font-mono text-lg disabled:opacity-30 min-w-[44px] min-h-[44px] transition-colors ${
                     pendingSeatKeys.includes(seatKey)
-                      ? 'border-[#e8c84a] text-[#e8c84a]'
-                      : 'border-[#444444] text-[#444444] hover:border-[#e8c84a] hover:text-[#e8c84a]'
+                      ? 'border-[#e8c84a] text-[#e8c84a] shadow-[0_0_10px_rgba(232,200,74,0.5)]'
+                      : 'border-[#b8b8b8] text-[#b8b8b8] hover:border-[#e8c84a] hover:text-[#e8c84a] hover:shadow-[0_0_8px_rgba(232,200,74,0.35)]'
                   }`}
                   style={{
                     width: Math.max(40, slotW),
@@ -813,7 +827,7 @@ export default function SeatMap({
                       type="button"
                       onClick={() => openSqueeze(seatKey)}
                       disabled={loading}
-                      className="border border-dashed border-[#f87171] bg-transparent text-[#f87171] flex items-center justify-center hover:opacity-85 transition-opacity font-mono text-[9px] tracking-[0.15em] uppercase min-w-[40px] min-h-[40px]"
+                      className="border-2 border-dashed border-[#e8a0a0] bg-transparent text-[#e8a0a0] flex items-center justify-center hover:border-[#f87171] hover:text-[#f87171] hover:opacity-95 transition-all font-mono text-[9px] tracking-[0.15em] uppercase min-w-[40px] min-h-[40px]"
                       style={{
                         width: Math.max(40, slotW),
                         height: Math.max(40, slotH),
@@ -913,7 +927,7 @@ export default function SeatMap({
                     <button
                       type="button"
                       onClick={joinWaitlist}
-                      className="border-2 border-dashed border-[#c084fc] bg-transparent hover:border-[#c084fc] hover:opacity-90 w-12 h-14 flex items-center justify-center text-[#c084fc] transition-colors font-mono text-xl min-w-[44px] min-h-[44px]"
+                      className="border-2 border-dashed border-[#c8b0e8] bg-transparent hover:border-[#c084fc] hover:text-[#c084fc] hover:opacity-95 w-12 h-14 flex items-center justify-center text-[#c8b0e8] transition-colors font-mono text-xl min-w-[44px] min-h-[44px]"
                       style={{ borderRadius: 0 }}
                     >
                       +

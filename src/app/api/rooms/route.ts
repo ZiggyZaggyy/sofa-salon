@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     decorations,
     canvasW,
     canvasH,
+    roomBackgroundId,
   } = body;
 
   if (!name || !Array.isArray(furniture) || !Array.isArray(decorations)) {
@@ -46,16 +47,20 @@ export async function POST(req: NextRequest) {
   }
 
   if (id) {
+    const update: Record<string, unknown> = {
+      name,
+      furniture_json: furniture,
+      decorations_json: decorations,
+      canvas_w: canvasW ?? undefined,
+      canvas_h: canvasH ?? undefined,
+      updated_at: new Date().toISOString(),
+    };
+    if (typeof roomBackgroundId === 'string' && roomBackgroundId.trim()) {
+      update.room_background_id = roomBackgroundId.trim();
+    }
     const { data, error } = await supabase
       .from('rooms')
-      .update({
-        name,
-        furniture_json: furniture,
-        decorations_json: decorations,
-        canvas_w: canvasW ?? undefined,
-        canvas_h: canvasH ?? undefined,
-        updated_at: new Date().toISOString(),
-      })
+      .update(update)
       .eq('id', id)
       .select()
       .single();
@@ -74,6 +79,7 @@ export async function POST(req: NextRequest) {
       canvas_w: canvasW ?? 600,
       canvas_h: canvasH ?? 400,
       owner_id: user.id,
+      room_background_id: typeof roomBackgroundId === 'string' && roomBackgroundId.trim() ? roomBackgroundId.trim() : 'warm',
     })
     .select()
     .single();

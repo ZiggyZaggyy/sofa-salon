@@ -173,6 +173,7 @@ export const tEn = {
     testSqueezeHint: 'Only in Admin: open an event → "View seat map". Then add ?testSqueeze=1 to that page URL and refresh. Squeeze slots will appear so you can test without the room being full. (Cannot be tested from the home page.)',
     roomName: 'Room name',
     roomNamePlaceholder: 'Room name',
+    roomBackground: 'Room background',
     saveName: 'Save name',
     roomEditor: {
       worksBest: 'Room editor works best on desktop.',
@@ -419,6 +420,7 @@ export const tZh = {
     testSqueezeHint: '仅在 Admin 中可测：进入某场活动 → 点「查看座位图」。在该页面 URL 末尾加 ?testSqueeze=1 并刷新，挤一挤位会出现，无需满座即可测试。（无法从首页选座进入测试。）',
     roomName: '房间名称',
     roomNamePlaceholder: '房间名称',
+    roomBackground: '房间背景',
     saveName: '保存名称',
     roomEditor: {
       worksBest: '房间编辑建议在电脑上使用。',

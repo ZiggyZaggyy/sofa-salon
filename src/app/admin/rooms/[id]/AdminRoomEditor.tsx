@@ -15,6 +15,7 @@ interface Props {
   initialDecorations: unknown[];
   canvasW: number;
   canvasH: number;
+  initialRoomBackgroundId: string;
 }
 
 export default function AdminRoomEditor({
@@ -24,11 +25,14 @@ export default function AdminRoomEditor({
   initialDecorations,
   canvasW,
   canvasH,
+  initialRoomBackgroundId,
 }: Props) {
   const router = useRouter();
   const { t } = useLocale();
   const [name, setName] = useState(initialName);
   const [savingName, setSavingName] = useState(false);
+  const [roomBackgroundId, setRoomBackgroundId] = useState(initialRoomBackgroundId);
+  const [savingBg, setSavingBg] = useState(false);
 
   const handleSaveName = async () => {
     const trimmed = name.trim();
@@ -51,6 +55,21 @@ export default function AdminRoomEditor({
     }
   };
 
+  const handleBackgroundChange = async (id: string) => {
+    setRoomBackgroundId(id);
+    setSavingBg(true);
+    try {
+      const res = await fetch(`/api/rooms/${roomId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room_background_id: id }),
+      });
+      if (res.ok) router.refresh();
+    } finally {
+      setSavingBg(false);
+    }
+  };
+
   const handleSave = async (
     furniture: FurniturePiece[],
     decorations: Decoration[]
@@ -65,6 +84,7 @@ export default function AdminRoomEditor({
         decorations,
         canvasW,
         canvasH,
+        roomBackgroundId,
       }),
     });
     const data = await res.json();
@@ -75,8 +95,8 @@ export default function AdminRoomEditor({
 
   return (
     <>
-      {/* Row 1: Back to rooms | Room name input | Save name button */}
-      <div className="flex items-center gap-4 pl-6 pr-4 py-3 border-b border-[#2a2a2a] bg-[#161616] shrink-0">
+      {/* Row 1: Back | Name | Save name */}
+      <div className="flex flex-wrap items-center gap-4 pl-6 pr-4 py-3 border-b border-[#2a2a2a] bg-[#161616] shrink-0">
         <Link
           href="/admin/rooms"
           className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a] shrink-0 transition-colors"
@@ -114,6 +134,8 @@ export default function AdminRoomEditor({
           canvasW={canvasW}
           canvasH={canvasH}
           onSave={handleSave}
+          roomBackgroundId={roomBackgroundId}
+          onRoomBackgroundChange={handleBackgroundChange}
         />
       </div>
     </>

@@ -45,7 +45,7 @@ export async function GET(
   ] = await Promise.all([
     admin
       .from('screenings')
-      .select('title, squeeze_note, waitlist_mode, rooms(furniture_json, decorations_json, canvas_w, canvas_h)')
+      .select('title, squeeze_note, waitlist_mode, rooms(furniture_json, decorations_json, canvas_w, canvas_h, room_background_id)')
       .eq('id', screeningId)
       .single(),
     admin
@@ -71,6 +71,7 @@ export async function GET(
     decorations_json?: unknown;
     canvas_w?: number;
     canvas_h?: number;
+    room_background_id?: string | null;
   } | undefined;
 
   const room = raw
@@ -83,6 +84,7 @@ export async function GET(
           : JSON.parse(typeof raw.decorations_json === 'string' ? raw.decorations_json : '[]')) as unknown[],
         canvasW: raw.canvas_w ?? 600,
         canvasH: raw.canvas_h ?? 400,
+        roomBackgroundId: raw.room_background_id ?? 'warm',
       }
     : null;
 

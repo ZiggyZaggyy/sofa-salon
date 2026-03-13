@@ -47,6 +47,23 @@ export interface Room {
   canvasH: number;
 }
 
+/** 座位图房间背景预设（用户可选，存 localStorage）。 */
+export const ROOM_BACKGROUND_PRESETS: Array<{
+  id: string;
+  name_zh: string;
+  name_en: string;
+  fill: string;
+  lineFill: string;
+}> = [
+  { id: 'warm', name_zh: '暖黄', name_en: 'Warm', fill: '#2a2218', lineFill: '#252015' },
+  { id: 'yellow-carpet', name_zh: '淡黄毯', name_en: 'Yellow carpet', fill: '#5a5344', lineFill: '#4d4638' },
+  { id: 'cool', name_zh: '冷灰', name_en: 'Cool gray', fill: '#1a1a1a', lineFill: '#252525' },
+  { id: 'neutral', name_zh: '中性灰', name_en: 'Neutral', fill: '#1e1e1e', lineFill: '#2a2a2a' },
+  { id: 'slate', name_zh: '深灰蓝', name_en: 'Slate', fill: '#1a1d2e', lineFill: '#252a40' },
+  { id: 'forest', name_zh: '暗绿', name_en: 'Forest', fill: '#1a2218', lineFill: '#202520' },
+];
+
+
 export const SEAT_RULES: Record<
   FurnitureType,
   {

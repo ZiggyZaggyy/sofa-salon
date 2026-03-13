@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useLocale } from '@/components/LocaleProvider';
 import PigeonHead from '@/components/PigeonHead';
@@ -23,6 +23,7 @@ type StateId =
   | 'INFO_SNACKS'
   | 'INFO_PUNCTUAL'
   | 'INFO_DRESSCODE'
+  | 'INFO_DEV'
   | 'TECH_ISSUE'
   | 'TECH_CANT_SELECT'
   | 'TECH_SEAT_GONE'
@@ -59,7 +60,14 @@ const STATES: Record<StateId, State> = {
       { label_zh: 'ℹ️  活动详情', label_en: 'Event info', next: 'EVENT_INFO' },
       { label_zh: '🔧  操作问题', label_en: 'Technical issue', next: 'TECH_ISSUE' },
       { label_zh: '🐦  我想说鸽语', label_en: 'Speak Pigeon', next: 'PIGEON_NONSENSE' },
+      { label_zh: '👩‍💻  查看开发者信息', label_en: 'Developer info', next: 'INFO_DEV' },
     ],
+  },
+  INFO_DEV: {
+    id: 'INFO_DEV',
+    messages_zh: ['本应用由 471 开发。', 'GitHub: https://github.com/eveshi'],
+    messages_en: ['This app was built by 471.', 'GitHub: https://github.com/eveshi'],
+    options: [{ label_zh: '返回主菜单', label_en: 'Back to menu', next: 'ROOT' }],
   },
   RULES: {
     id: 'RULES',
@@ -391,6 +399,26 @@ const STATES: Record<StateId, State> = {
 
 type LogEntry = { type: 'pigeon'; content: string } | { type: 'user'; content: string };
 
+/** Turn message content into nodes, with URLs as clickable links. */
+function contentWithLinks(content: string): ReactNode {
+  const parts = content.split(/(https?:\/\/[^\s]+)/g);
+  return parts.map((part, i) =>
+    /^https?:\/\//.test(part) ? (
+      <a
+        key={i}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-[#2dd4bf] hover:underline break-all"
+      >
+        {part}
+      </a>
+    ) : (
+      part
+    )
+  );
+}
+
 type StackFrame = { stateId: StateId; logLength: number };
 
 type ScreeningOption = { id: string; title: string; screening_at: string };
@@ -709,7 +737,7 @@ export default function FaqChatbot() {
                     className="font-mono text-[11px] text-[#e8e4dc] leading-[1.8] whitespace-pre-line"
                     style={{ fontFamily: 'var(--font-mono)' }}
                   >
-                    {entry.content}
+                    {contentWithLinks(entry.content)}
                   </p>
                 </div>
               ) : (

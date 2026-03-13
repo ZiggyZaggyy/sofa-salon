@@ -32,7 +32,7 @@ export default async function EditRoomPage({
 
   const { data: room } = await supabase
     .from('rooms')
-    .select('id, name, furniture_json, decorations_json, canvas_w, canvas_h')
+    .select('id, name, furniture_json, decorations_json, canvas_w, canvas_h, room_background_id')
     .eq('id', id)
     .single();
 
@@ -40,6 +40,7 @@ export default async function EditRoomPage({
 
   const furniture = (room.furniture_json as Array<unknown>) ?? [];
   const decorations = (room.decorations_json as Array<unknown>) ?? [];
+  const roomBackgroundId = (room as { room_background_id?: string | null }).room_background_id ?? 'warm';
 
   return (
     <div className="h-[calc(100vh-90px)] flex flex-col bg-[#0f0f0f]">
@@ -50,6 +51,7 @@ export default async function EditRoomPage({
         initialDecorations={decorations}
         canvasW={room.canvas_w ?? 600}
         canvasH={room.canvas_h ?? 400}
+        initialRoomBackgroundId={roomBackgroundId}
       />
     </div>
   );

@@ -24,13 +24,16 @@ export async function PATCH(
   const auth = await requireAdmin(supabase);
   if (auth) return NextResponse.json({ error: auth.error }, { status: auth.status });
   const body = await req.json();
-  const { name } = body;
-  if (typeof name !== 'string' || !name.trim()) {
-    return NextResponse.json({ error: 'name required' }, { status: 400 });
+  const { name, room_background_id: roomBackgroundId } = body;
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (typeof name === 'string' && name.trim()) updates.name = name.trim();
+  if (typeof roomBackgroundId === 'string' && roomBackgroundId.trim()) updates.room_background_id = roomBackgroundId.trim();
+  if (Object.keys(updates).length === 1) {
+    return NextResponse.json({ error: 'name or room_background_id required' }, { status: 400 });
   }
   const { data, error } = await supabase
     .from('rooms')
-    .update({ name: name.trim(), updated_at: new Date().toISOString() })
+    .update(updates)
     .eq('id', id)
     .select()
     .single();
