@@ -167,6 +167,17 @@ export default function SeatMap({
   const pendingReservationsUpdate = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingWaitlistUpdate = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const fetchWaitlist = useCallback(async () => {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('waitlist')
+      .select('id, position, user_id, profiles(display_name, avatar_config)')
+      .eq('screening_id', screeningId)
+      .eq('status', 'waiting')
+      .order('position', { ascending: true });
+    setWaitlistEntries((data as unknown as WaitlistEntry[]) ?? []);
+  }, [screeningId]);
+
   useEffect(() => {
     const supabase = createClient();
 
@@ -179,15 +190,6 @@ export default function SeatMap({
         .select(select)
         .eq('screening_id', screeningId);
       setReservations((data as unknown as Reservation[]) ?? []);
-    }
-    async function fetchWaitlist() {
-      const { data } = await supabase
-        .from('waitlist')
-        .select('id, position, user_id, profiles(display_name, avatar_config)')
-        .eq('screening_id', screeningId)
-        .eq('status', 'waiting')
-        .order('position', { ascending: true });
-      setWaitlistEntries((data as unknown as WaitlistEntry[]) ?? []);
     }
 
     const ch1 = supabase
@@ -238,7 +240,7 @@ export default function SeatMap({
       supabase.removeChannel(ch1);
       supabase.removeChannel(ch2);
     };
-  }, [screeningId, isAdmin, onReservationsChange]);
+  }, [screeningId, isAdmin, onReservationsChange, fetchWaitlist]);
 
   const allSeatKeys = useMemo(
     () =>
