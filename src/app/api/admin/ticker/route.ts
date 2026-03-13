@@ -29,6 +29,8 @@ export async function GET() {
     config: {
       show_upcoming: config.show_upcoming !== 'false',
       show_ratings: config.show_ratings === 'true',
+      show_past_event_thank_you: config.show_past_event_thank_you === 'true',
+      show_reschedule_cancel_ticker: config.show_reschedule_cancel_ticker !== 'false',
     },
   });
 }
@@ -46,7 +48,12 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('ticker_custom')
-    .insert({ content: content.trim(), sort_order: Number(sort_order) || 0, is_active: !!is_active })
+    .insert({
+      content: content.trim(),
+      sort_order: Number(sort_order) || 0,
+      is_active: !!is_active,
+      created_by: auth.user.id,
+    })
     .select('id, content, sort_order, is_active')
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -60,12 +67,18 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json();
   if (body.config !== undefined) {
-    const { show_upcoming, show_ratings } = body.config;
+    const { show_upcoming, show_ratings, show_past_event_thank_you, show_reschedule_cancel_ticker } = body.config;
     if (typeof show_upcoming === 'boolean') {
       await supabase.from('ticker_config').upsert({ key: 'show_upcoming', value: String(show_upcoming) }, { onConflict: 'key' });
     }
     if (typeof show_ratings === 'boolean') {
       await supabase.from('ticker_config').upsert({ key: 'show_ratings', value: String(show_ratings) }, { onConflict: 'key' });
+    }
+    if (typeof show_past_event_thank_you === 'boolean') {
+      await supabase.from('ticker_config').upsert({ key: 'show_past_event_thank_you', value: String(show_past_event_thank_you) }, { onConflict: 'key' });
+    }
+    if (typeof show_reschedule_cancel_ticker === 'boolean') {
+      await supabase.from('ticker_config').upsert({ key: 'show_reschedule_cancel_ticker', value: String(show_reschedule_cancel_ticker) }, { onConflict: 'key' });
     }
     return NextResponse.json({ ok: true });
   }

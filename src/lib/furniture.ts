@@ -1,9 +1,9 @@
-export type FurnitureType = 'sofa' | 'sofa-l' | 'chair' | 'bench' | 'cushion';
+export type FurnitureType = 'sofa' | 'sofa-l' | 'chair' | 'bench' | 'cushion' | 'floor';
 export type DecorationType =
   | 'plant'
   | 'lamp'
   | 'table'
-  | 'bookshelf'
+  | 'rug'
   | 'tv'
   | 'coffee-table';
 export type LOrientation =
@@ -32,6 +32,10 @@ export interface Decoration {
   x: number;
   y: number;
   rotation?: DecorationRotation;
+  /** Optional tint for lamp, table, tv, etc. */
+  color?: string;
+  /** Scale for coffee-table (0.5–2), default 1. */
+  scale?: number;
 }
 
 export interface Room {
@@ -88,6 +92,13 @@ export const SEAT_RULES: Record<
     canSqueeze: false,
     defaultSqueezeExtra: 0,
   },
+  floor: {
+    fixed: true,
+    minSeats: 1,
+    maxSeats: 1,
+    canSqueeze: false,
+    defaultSqueezeExtra: 0,
+  },
 };
 
 export function canSqueeze(piece: FurniturePiece): boolean {
@@ -111,6 +122,7 @@ export const FURNITURE_DIMS: Record<FurnitureType, { w: number; h: number }> = {
   chair: { w: 44, h: 44 },
   bench: { w: 36, h: 30 },
   cushion: { w: 32, h: 32 },
+  floor: { w: 40, h: 40 },
 };
 
 /** Approximate axis-aligned bounds for decorations (from DecorationSVG). Center at (x,y). */
@@ -118,7 +130,7 @@ export const DECORATION_BOUNDS: Record<DecorationType, { w: number; h: number }>
   plant: { w: 28, h: 32 },
   lamp: { w: 36, h: 24 },
   table: { w: 54, h: 54 },
-  bookshelf: { w: 60, h: 40 },
+  rug: { w: 80, h: 50 },
   tv: { w: 160, h: 42 },
   'coffee-table': { w: 144, h: 56 },
 };
@@ -135,6 +147,18 @@ function rot(
   if (deg === 180) return [2 * cx - px, 2 * cy - py];
   if (deg === 270) return [cx - (cy - py), cy + (cx - px)];
   return [px, py];
+}
+
+/**
+ * Returns a user-facing label for a seat_key (e.g. "chair", "sofa", "squeeze").
+ * Strips internal IDs like "chair-1773297376014:0" -> "chair".
+ */
+export function seatKeyToDisplayLabel(seatKey: string): string {
+  const parts = seatKey.split(':');
+  if (parts[1] === 'squeeze') return 'squeeze';
+  const id = parts[0] ?? '';
+  const withoutTrailingId = id.replace(/-\d+$/, '');
+  return withoutTrailingId || id;
 }
 
 export function getSeatPositions(piece: FurniturePiece): SeatPos[] {
@@ -177,7 +201,7 @@ export function getSeatPositions(piece: FurniturePiece): SeatPos[] {
     }
   }
 
-  if (type === 'chair' || type === 'bench' || type === 'cushion') {
+  if (type === 'chair' || type === 'bench' || type === 'cushion' || type === 'floor') {
     const [rx, ry] = rot(x, y + 6, x, y, rotation);
     positions.push({ seatKey: `${id}:0`, x: rx, y: ry });
   }
@@ -259,9 +283,11 @@ export function getFurnitureFocusBox(
     points.push({ x: aabb.maxX, y: aabb.maxY });
   }
   for (const d of decorations) {
-    const bounds = DECORATION_BOUNDS[d.type];
+    const bounds = DECORATION_BOUNDS[d.type] ?? (d.type === 'bookshelf' ? DECORATION_BOUNDS['rug'] : undefined);
+    if (!bounds) continue;
+    const scale = d.type === 'coffee-table' ? (d.scale ?? 1) : 1;
     const r = d.rotation ?? 0;
-    const aabb = pieceAABB(d.x, d.y, bounds.w, bounds.h, r);
+    const aabb = pieceAABB(d.x, d.y, bounds.w * scale, bounds.h * scale, r);
     points.push({ x: aabb.minX, y: aabb.minY });
     points.push({ x: aabb.maxX, y: aabb.maxY });
   }
@@ -291,6 +317,7 @@ function defaultColor(type: FurnitureType): string {
     chair: '#2a4fd6',
     bench: '#4a3820',
     cushion: '#3ab87a',
+    floor: '#4a3d2e',
   };
   return defaults[type];
 }

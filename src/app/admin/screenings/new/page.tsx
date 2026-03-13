@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 import { useLocale } from '@/components/LocaleProvider';
 
 interface Room {
@@ -17,7 +17,6 @@ export default function NewScreeningPage() {
   const [description, setDescription] = useState('');
   const [screeningAt, setScreeningAt] = useState('');
   const [roomId, setRoomId] = useState('');
-  const [squeezeNote, setSqueezeNote] = useState('');
   const [waitlistMode, setWaitlistMode] = useState<'auto' | 'manual'>('auto');
   const [year, setYear] = useState('');
   const [director, setDirector] = useState('');
@@ -44,7 +43,6 @@ export default function NewScreeningPage() {
         description,
         screening_at: new Date(screeningAt).toISOString(),
         room_id: roomId || null,
-        squeeze_note: squeezeNote,
         waitlist_mode: waitlistMode,
         year: year ? parseInt(year, 10) : null,
         director: director || null,
@@ -60,13 +58,10 @@ export default function NewScreeningPage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-8 bg-[#0f0f0f]">
-      <Link
-        href="/admin"
-        className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a] mb-6 inline-block transition-colors"
-      >
+      <BackButton className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a] mb-6 inline-block transition-colors">
         {t.admin.backToAdmin}
-      </Link>
-      <h1 className="font-serif text-2xl italic text-[#e8c84a] mb-6">New event</h1>
+      </BackButton>
+      <h1 className="font-serif text-2xl italic text-[#e8c84a] mb-6">{t.admin.newEvent}</h1>
       <form onSubmit={submit} className="space-y-6">
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
@@ -169,19 +164,6 @@ export default function NewScreeningPage() {
         </div>
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
-            Squeeze note (optional)
-          </label>
-          <input
-            type="text"
-            value={squeezeNote}
-            onChange={(e) => setSqueezeNote(e.target.value)}
-            className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
-            placeholder="e.g. Can squeeze 2 more on the floor"
-            style={{ borderRadius: 0 }}
-          />
-        </div>
-        <div>
-          <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
             Waitlist mode
           </label>
           <div className="flex gap-2">
@@ -222,7 +204,7 @@ export default function NewScreeningPage() {
           className="w-full bg-[#e8c84a] text-[#0f0f0f] py-3 font-mono text-[10px] tracking-[0.2em] uppercase min-h-[44px] hover:opacity-85 active:scale-[0.97] disabled:opacity-60 transition-all"
           style={{ borderRadius: 0 }}
         >
-          Create event
+          {t.admin.createEvent}
         </button>
       </form>
     </div>

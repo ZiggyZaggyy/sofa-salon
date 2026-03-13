@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 import { useLocale } from '@/components/LocaleProvider';
 
 interface Room {
@@ -46,7 +46,6 @@ export default function EditScreeningForm({ screening, rooms }: Props) {
   const [description, setDescription] = useState(screening.description);
   const [screeningAt, setScreeningAt] = useState(toLocalDatetimeLocal(screening.screening_at));
   const [roomId, setRoomId] = useState(screening.room_id);
-  const [squeezeNote, setSqueezeNote] = useState(screening.squeeze_note);
   const [waitlistMode, setWaitlistMode] = useState<'auto' | 'manual'>(screening.waitlist_mode);
   const [isActive, setIsActive] = useState(screening.is_active);
   const [year, setYear] = useState(screening.year != null ? String(screening.year) : '');
@@ -56,7 +55,6 @@ export default function EditScreeningForm({ screening, rooms }: Props) {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !screeningAt) return;
@@ -70,7 +68,6 @@ export default function EditScreeningForm({ screening, rooms }: Props) {
         description,
         screening_at: new Date(screeningAt).toISOString(),
         room_id: roomId || null,
-        squeeze_note: squeezeNote,
         waitlist_mode: waitlistMode,
         is_active: isActive,
         year: year ? parseInt(year, 10) : null,
@@ -91,12 +88,9 @@ export default function EditScreeningForm({ screening, rooms }: Props) {
   const { t } = useLocale();
   return (
     <>
-      <Link
-        href="/admin"
-        className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a] mb-6 inline-block transition-colors"
-      >
+      <BackButton className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a] mb-6 inline-block transition-colors">
         {t.admin.backToAdmin}
-      </Link>
+      </BackButton>
       <h1 className="font-serif text-2xl italic text-[#e8c84a] mb-6">Edit event</h1>
       {error && (
         <p className="font-mono text-[13px] text-[#f87171] mb-4">{error}</p>
@@ -200,19 +194,6 @@ export default function EditScreeningForm({ screening, rooms }: Props) {
               </option>
             ))}
           </select>
-        </div>
-        <div>
-          <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
-            Squeeze note (optional)
-          </label>
-          <input
-            type="text"
-            value={squeezeNote}
-            onChange={(e) => setSqueezeNote(e.target.value)}
-            className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
-            placeholder="e.g. Can squeeze 2 more on the floor"
-            style={{ borderRadius: 0 }}
-          />
         </div>
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">

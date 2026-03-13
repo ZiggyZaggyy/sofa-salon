@@ -3,9 +3,15 @@
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useLocale } from '@/components/LocaleProvider';
 
-export default function LoginForm() {
+interface LoginFormProps {
+  redirectTo?: string;
+}
+
+export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
   const router = useRouter();
+  const { locale } = useLocale();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +29,7 @@ export default function LoginForm() {
       setError(err.message);
       return;
     }
-    router.push('/');
+    router.push(redirectTo);
     router.refresh();
   };
 
@@ -37,7 +43,13 @@ export default function LoginForm() {
       setError(err.message);
       return;
     }
-    router.push('/');
+    // Fire-and-forget: send welcome email (reminder to check inbox, link to profile for email prefs)
+    fetch('/api/auth/welcome-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locale: locale === 'zh' ? 'zh' : 'en' }),
+    }).catch(() => {});
+    router.push(redirectTo);
     router.refresh();
   };
 

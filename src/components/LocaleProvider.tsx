@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { useRouter } from 'next/navigation';
 import { getT, type Locale } from '@/lib/i18n';
 import { getStoredLocale, setStoredLocale } from '@/lib/i18n';
 
@@ -19,6 +20,7 @@ const LocaleContext = createContext<{
 } | null>(null);
 
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [locale, setLocaleState] = useState<Locale>('en');
   useEffect(() => {
     const stored = getStoredLocale();
@@ -30,7 +32,8 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const setLocale = useCallback((next: Locale) => {
     setStoredLocale(next);
     setLocaleState(next);
-  }, []);
+    router.refresh();
+  }, [router]);
   const t = getT(locale);
 
   return (

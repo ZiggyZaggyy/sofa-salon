@@ -13,6 +13,7 @@ import {
 } from '@/lib/furniture';
 import FurnitureSVG from '@/components/FurnitureSVG';
 import DecorationSVG from '@/components/DecorationSVG';
+import { useLocale } from '@/components/LocaleProvider';
 
 /** Same 8 presets for all furniture types (sofa/chair spec) */
 const COLOUR_PRESETS = [
@@ -142,6 +143,8 @@ export default function RoomEditor({
       x: canvasW / 2,
       y: canvasH / 2,
       rotation: 0,
+      color: type === 'lamp' ? '#c8a060' : type === 'table' ? '#4a3820' : type === 'tv' ? '#0d1a2e' : type === 'rug' ? '#4a3820' : undefined,
+      scale: type === 'coffee-table' ? 1 : undefined,
     };
     setDecorations((prev) => [...prev, newDeco]);
     setSelectedDecoId(newDeco.id);
@@ -173,80 +176,110 @@ export default function RoomEditor({
   const selected = furniture.find((f) => f.id === selectedId);
   const selectedDeco = decorations.find((d) => d.id === selectedDecoId);
   const capacity = roomCapacity(furniture);
+  const { t } = useLocale();
+  const re = t.admin.roomEditor;
 
   return (
-    <div className="flex flex-col md:flex-row gap-0 h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Mobile warning */}
-      <div className="md:hidden bg-[#1e1e1e] border-b border-[#f87171] px-4 py-2 text-[#f87171] font-mono text-[10px] tracking-[0.2em] uppercase text-center">
-        Room editor works best on desktop.
+      <div className="md:hidden bg-[#1e1e1e] border-b border-[#f87171] px-4 py-2 text-[#f87171] font-mono text-[10px] tracking-[0.2em] uppercase text-center shrink-0">
+        {re.worksBest}
       </div>
 
-      {/* Toolbar */}
-      <div className="w-full md:w-36 bg-[#161616] border-b md:border-b-0 md:border-r border-[#2a2a2a] p-3 flex flex-row md:flex-col gap-2 shrink-0 flex-wrap">
-        <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-1 w-full">
-          Add furniture
-        </p>
-        {(['sofa', 'sofa-l', 'chair', 'bench', 'cushion'] as FurnitureType[]).map(
-          (type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => addFurniture(type)}
-              className="text-left font-mono text-[10px] px-3 py-2 bg-[#1e1e1e] hover:border-[#e8c84a] text-[#e8e4dc] hover:text-[#e8c84a] transition-colors border border-[#2a2a2a] min-w-[80px]"
-              style={{ borderRadius: 0 }}
-            >
-              + {type}
-            </button>
-          )
-        )}
-        <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mt-4 mb-1 w-full">
-          Decor
-        </p>
-        {(
-          [
-            'plant',
-            'lamp',
-            'table',
-            'bookshelf',
-            'tv',
-            'coffee-table',
-          ] as DecorationType[]
-        ).map((type) => (
-          <button
-            key={type}
-            type="button"
-            onClick={() => addDecoration(type)}
-            className="text-left font-mono text-[10px] px-3 py-2 bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] hover:border-[#e8c84a] hover:text-[#e8c84a] transition-colors min-w-[80px]"
-            style={{ borderRadius: 0 }}
-          >
-            + {type}
-          </button>
-        ))}
-        <div className="mt-auto pt-4 border-t border-[#2a2a2a] w-full">
-          <p className="font-mono text-[10px] text-[#888888] mb-1">Total seats</p>
-          <p className="text-[#e8c84a] text-xl font-mono">{capacity}</p>
+      {/* Row 2: Furniture + Decor horizontal strip (1–2 rows, scrollable) */}
+      <div className="shrink-0 border-b border-[#2a2a2a] bg-[#161616] overflow-x-auto">
+        <div className="p-3 flex flex-col gap-2 min-w-0">
+          <div className="flex items-center gap-2 flex-nowrap">
+            <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] shrink-0">
+              {re.add}
+            </span>
+            {(['sofa', 'sofa-l', 'chair', 'bench', 'cushion', 'floor'] as FurnitureType[]).map(
+              (type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => addFurniture(type)}
+                  className="font-mono text-[10px] px-3 py-2 bg-[#1e1e1e] hover:border-[#e8c84a] text-[#e8e4dc] hover:text-[#e8c84a] transition-colors border border-[#2a2a2a] shrink-0"
+                  style={{ borderRadius: 0 }}
+                >
+                  + {re.furnitureTypes[type]}
+                </button>
+              )
+            )}
+            <span className="font-mono text-[10px] text-[#444444] mx-1 shrink-0">|</span>
+            {furniture.map((piece) => (
+              <button
+                key={piece.id}
+                type="button"
+                onClick={() => { setSelectedId(piece.id); setSelectedDecoId(null); }}
+                className={`font-mono text-[10px] px-3 py-2 border shrink-0 transition-colors ${
+                  selectedId === piece.id
+                    ? 'bg-[#e8c84a] text-[#0f0f0f] border-[#e8c84a]'
+                    : 'bg-[#1e1e1e] text-[#e8e4dc] border-[#2a2a2a] hover:border-[#e8c84a] hover:text-[#e8c84a]'
+                }`}
+                style={{ borderRadius: 0 }}
+              >
+                {re.furnitureTypes[piece.type]}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 flex-nowrap">
+            <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] shrink-0">
+              {re.decor}
+            </span>
+            {(
+              ['plant', 'lamp', 'table', 'rug', 'tv', 'coffee-table'] as DecorationType[]
+            ).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => addDecoration(type)}
+                className="font-mono text-[10px] px-3 py-2 bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] hover:border-[#e8c84a] hover:text-[#e8c84a] transition-colors shrink-0"
+                style={{ borderRadius: 0 }}
+              >
+                + {re.decorationTypes[type]}
+              </button>
+            ))}
+            <span className="font-mono text-[10px] text-[#444444] mx-1 shrink-0">|</span>
+            {decorations.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => { setSelectedDecoId(d.id); setSelectedId(null); }}
+                className={`font-mono text-[10px] px-3 py-2 border shrink-0 transition-colors ${
+                  selectedDecoId === d.id
+                    ? 'bg-[#e8c84a] text-[#0f0f0f] border-[#e8c84a]'
+                    : 'bg-[#1e1e1e] text-[#e8e4dc] border-[#2a2a2a] hover:border-[#e8c84a] hover:text-[#e8c84a]'
+                }`}
+                style={{ borderRadius: 0 }}
+              >
+                {re.decorationTypes[d.type]}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Canvas */}
-      <div className="flex-1 overflow-auto bg-[#2a2218] relative min-h-[300px]">
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${canvasW} ${canvasH}`}
-          width={canvasW}
-          height={canvasH}
-          className="max-w-full h-auto block pixel"
-          style={{ imageRendering: 'pixelated' }}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerLeave={onPointerUp}
-          onClick={(e) => {
-            if (e.target === svgRef.current) {
-              setSelectedId(null);
-              setSelectedDecoId(null);
-            }
-          }}
-        >
+      {/* Row 3: Room view (smaller) + Save Room panel */}
+      <div className="flex-1 flex flex-col md:flex-row gap-0 min-h-0">
+        {/* Canvas: fills available height, no scrollbar; SVG scales to fit */}
+        <div className="flex-1 overflow-hidden bg-[#2a2218] relative min-h-[200px]">
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${canvasW} ${canvasH}`}
+            preserveAspectRatio="xMidYMid meet"
+            className="w-full h-full block pixel"
+            style={{ imageRendering: 'pixelated' }}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerLeave={onPointerUp}
+            onClick={(e) => {
+              if (e.target === svgRef.current) {
+                setSelectedId(null);
+                setSelectedDecoId(null);
+              }
+            }}
+          >
           <rect width={canvasW} height={canvasH} fill="#2a2218" />
           {Array.from({ length: Math.floor(canvasH / 40) }, (_, i) => (
             <line
@@ -270,7 +303,8 @@ export default function RoomEditor({
               strokeWidth={1}
             />
           ))}
-          {decorations.map((d) => (
+          {/* Layer order: rug (bottom) → furniture → other decorations (top) */}
+          {decorations.filter((d) => d.type === 'rug').map((d) => (
             <g
               key={d.id}
               onPointerDown={(e) => onPointerDown(e, d.id, true)}
@@ -292,18 +326,35 @@ export default function RoomEditor({
               />
             </g>
           ))}
-        </svg>
-      </div>
+          {decorations.filter((d) => d.type !== 'rug').map((d) => (
+            <g
+              key={d.id}
+              onPointerDown={(e) => onPointerDown(e, d.id, true)}
+              style={{ cursor: 'grab', userSelect: 'none' }}
+            >
+              <DecorationSVG decoration={d} />
+            </g>
+          ))}
+          </svg>
+          {/* Total Seats overlay on room view corner */}
+          <div
+            className="absolute bottom-3 right-3 z-10 bg-[#0f0f0f]/95 border border-[#e8c84a] px-3 py-2 pointer-events-none"
+            style={{ borderRadius: 0 }}
+          >
+            <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888]">{re.totalSeats}</p>
+            <p className="text-[#e8c84a] text-xl font-mono">{capacity}</p>
+          </div>
+        </div>
 
-      {/* Properties panel */}
-      <div className="w-full md:w-52 bg-[#161616] border-t md:border-t-0 md:border-l border-[#2a2a2a] p-4 shrink-0 overflow-y-auto">
+        {/* Properties panel + Save Room */}
+      <div className="room-editor-sidebar w-full md:w-52 bg-[#161616] border-t md:border-t-0 md:border-l border-[#2a2a2a] p-4 shrink-0 overflow-y-auto min-h-0">
         {selected ? (
           <>
             <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#e8c84a] mb-4">
-              {selected.type}
+              {re.furnitureTypes[selected.type]}
             </p>
             <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
-              Colour
+              {re.colour}
             </p>
             <div className="grid grid-cols-4 gap-1 mb-3">
               {COLOUR_PRESETS.map((c) => (
@@ -328,7 +379,7 @@ export default function RoomEditor({
                 style={{ backgroundColor: selected.color, borderRadius: 0 }}
                 className="w-8 h-8 border border-[#2a2a2a] flex-shrink-0"
               />
-              <span className="font-mono text-[13px] text-[#888888]">Custom</span>
+              <span className="font-mono text-[13px] text-[#888888]">{re.custom}</span>
               <input
                 type="color"
                 value={selected.color}
@@ -340,7 +391,7 @@ export default function RoomEditor({
             {!SEAT_RULES[selected.type].fixed && (
               <>
                 <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-1">
-                  Seats ({SEAT_RULES[selected.type].minSeats}–
+                  {re.seats} ({SEAT_RULES[selected.type].minSeats}–
                   {SEAT_RULES[selected.type].maxSeats})
                 </label>
                 <input
@@ -374,11 +425,11 @@ export default function RoomEditor({
                   className="w-full mb-1"
                 />
                 <p className="font-mono text-[10px] text-[#888888] mb-3">
-                  +{selected.squeezeExtra} when full
+                  {re.squeezeWhenFull.replace('{n}', String(selected.squeezeExtra))}
                 </p>
               </>
             )}
-            <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-1">Rotation</label>
+            <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-1">{re.rotation}</label>
             <div className="grid grid-cols-4 gap-1 mb-3">
               {([0, 90, 180, 270] as const).map((r) => (
                 <button
@@ -399,7 +450,7 @@ export default function RoomEditor({
             {selected.type === 'sofa-l' && (
               <>
                 <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-1">
-                  L direction
+                  {re.lDirection}
                 </label>
                 <select
                   value={selected.lOrientation}
@@ -411,10 +462,10 @@ export default function RoomEditor({
                   className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] p-2 mb-3 outline-none focus:border-[#e8c84a]"
                   style={{ borderRadius: 0 }}
                 >
-                  <option value="bottom-right">└ bottom-right</option>
-                  <option value="bottom-left">┘ bottom-left</option>
-                  <option value="top-right">┐ top-right</option>
-                  <option value="top-left">┌ top-left</option>
+                  <option value="bottom-right">{re.lOrientation['bottom-right']}</option>
+                  <option value="bottom-left">{re.lOrientation['bottom-left']}</option>
+                  <option value="top-right">{re.lOrientation['top-right']}</option>
+                  <option value="top-left">{re.lOrientation['top-left']}</option>
                 </select>
               </>
             )}
@@ -424,15 +475,64 @@ export default function RoomEditor({
               className="w-full font-mono text-[10px] tracking-[0.2em] uppercase py-2 border border-[#f87171] text-[#f87171] hover:opacity-85 transition-opacity mt-2"
               style={{ borderRadius: 0 }}
             >
-              Delete
+              {re.delete}
             </button>
           </>
         ) : selectedDeco ? (
           <>
             <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#e8c84a] mb-4">
-              {selectedDeco.type}
+              {re.decorationTypes[selectedDeco.type]}
             </p>
-            <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-1">Rotation</label>
+            {(['lamp', 'table', 'tv', 'rug'] as DecorationType[]).includes(selectedDeco.type) && (
+              <>
+                <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">{re.colour}</p>
+                <div className="grid grid-cols-4 gap-1 mb-3">
+                  {COLOUR_PRESETS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => updateDecoration(selectedDeco.id, { color: c })}
+                      style={{ backgroundColor: c, borderRadius: 0 }}
+                      className={`w-full aspect-square border-2 transition-colors ${
+                        (selectedDeco.color ?? '') === c ? 'border-[#e8c84a]' : 'border-transparent hover:border-[#888888]'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <label htmlFor="deco-color-picker" className="flex items-center gap-2 cursor-pointer mb-3">
+                  <div
+                    style={{ backgroundColor: selectedDeco.color ?? '#888', borderRadius: 0 }}
+                    className="w-8 h-8 border border-[#2a2a2a] flex-shrink-0"
+                  />
+                  <span className="font-mono text-[13px] text-[#888888]">{re.custom}</span>
+                  <input
+                    type="color"
+                    value={selectedDeco.color ?? '#888888'}
+                    onChange={(e) => updateDecoration(selectedDeco.id, { color: e.target.value })}
+                    className="opacity-0 absolute w-0 h-0"
+                    id="deco-color-picker"
+                  />
+                </label>
+              </>
+            )}
+            {selectedDeco.type === 'coffee-table' && (
+              <>
+                <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-1">{re.scale}</label>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={2}
+                  step={0.1}
+                  value={selectedDeco.scale ?? 1}
+                  onChange={(e) => updateDecoration(selectedDeco.id, { scale: parseFloat(e.target.value) })}
+                  className="w-full mb-1"
+                />
+                <p className="font-mono text-[13px] text-[#e8c84a] mb-3">
+                  {(selectedDeco.scale ?? 1).toFixed(1)}×
+                </p>
+              </>
+            )}
+            <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-1">{re.rotation}</label>
             <div className="grid grid-cols-4 gap-1 mb-3">
               {([0, 90, 180, 270] as const).map((r) => (
                 <button
@@ -456,12 +556,12 @@ export default function RoomEditor({
               className="w-full font-mono text-[10px] tracking-[0.2em] uppercase py-2 border border-[#f87171] text-[#f87171] hover:opacity-85 transition-opacity"
               style={{ borderRadius: 0 }}
             >
-              Delete
+              {re.delete}
             </button>
           </>
         ) : (
           <p className="font-mono text-[13px] text-[#888888]">
-            Click a piece to select it.
+            {re.clickToSelect}
           </p>
         )}
         <button
@@ -474,11 +574,12 @@ export default function RoomEditor({
           className="w-full mt-6 bg-[#e8c84a] text-[#0f0f0f] font-mono text-[10px] tracking-[0.2em] uppercase py-3 min-h-[44px] hover:opacity-85 active:scale-[0.97] transition-all"
           style={{ borderRadius: 0 }}
         >
-          Save Room
+          {re.saveRoom}
         </button>
         {savedFlash && (
-          <p className="font-mono text-[13px] text-[#4ade80] mt-2">Saved</p>
+          <p className="font-mono text-[13px] text-[#4ade80] mt-2">{re.saved}</p>
         )}
+      </div>
       </div>
     </div>
   );

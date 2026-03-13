@@ -10,12 +10,14 @@ interface Props {
   initialDisplayName: string;
   initialWechatId: string;
   initialAvatarConfig: unknown;
+  redirectTo?: string;
 }
 
 export default function ProfileSetupForm({
   initialDisplayName,
   initialWechatId,
   initialAvatarConfig,
+  redirectTo = '/',
 }: Props) {
   const router = useRouter();
   const [displayName, setDisplayName] = useState(initialDisplayName);
@@ -59,7 +61,7 @@ export default function ProfileSetupForm({
       setError(e.message);
       return;
     }
-    router.push('/');
+    router.push(redirectTo);
     router.refresh();
   };
 

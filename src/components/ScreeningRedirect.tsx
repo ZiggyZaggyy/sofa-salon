@@ -7,18 +7,19 @@ const MOBILE_BREAKPOINT = 640;
 
 interface Props {
   screeningId: string;
+  isAdmin?: boolean;
   children: React.ReactNode;
 }
 
-export default function ScreeningRedirect({ screeningId, children }: Props) {
+export default function ScreeningRedirect({ screeningId, isAdmin = false, children }: Props) {
   const router = useRouter();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (window.innerWidth < MOBILE_BREAKPOINT) {
+    if (window.innerWidth < MOBILE_BREAKPOINT && !isAdmin) {
       router.replace(`/?open=${encodeURIComponent(screeningId)}`);
     }
-  }, [screeningId, router]);
+  }, [screeningId, isAdmin, router]);
 
   return <>{children}</>;
 }

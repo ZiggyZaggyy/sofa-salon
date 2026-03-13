@@ -1,18 +1,28 @@
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { t } from '@/lib/i18n';
+import { getT, type Locale } from '@/lib/i18n';
+import BackButton from '@/components/BackButton';
 import SeatMap from '@/components/SeatMap';
 import GhostSeatManager from '@/components/GhostSeatManager';
+import AttendanceManager from '@/components/AttendanceManager';
 import ScreeningRedirect from '@/components/ScreeningRedirect';
+import ScreeningSeatMapWrapper from './ScreeningSeatMapWrapper';
 
 export default async function ScreeningPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ testSqueeze?: string } | null>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  const locale: Locale = cookieStore.get('sofa-salon-locale')?.value === 'zh' ? 'zh' : 'en';
+  const t = getT(locale);
 
   const [{ data: screening }, { data: { user } }] = await Promise.all([
     supabase
@@ -54,26 +64,57 @@ export default async function ScreeningPage({
   const furniture = (room.furniture_json as Array<unknown>) ?? [];
   const decorations = (room.decorations_json as Array<unknown>) ?? [];
 
-  const [
-    { data: userProfile },
-    { data: reservations },
-    { data: waitlist },
-  ] = await Promise.all([
-    user
-      ? supabase.from('profiles').select('wechat_id, is_admin').eq('id', user.id).single()
-      : Promise.resolve({ data: null }),
-    supabase
-      .from('reservations')
-      .select('id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, profiles(display_name, avatar_config, wechat_id)')
-      .eq('screening_id', id),
-    supabase
-      .from('waitlist')
-      .select('id, position, user_id, profiles(display_name, avatar_config)')
-      .eq('screening_id', id)
-      .eq('status', 'waiting')
-      .order('position', { ascending: true }),
-  ]);
+  const { data: userProfile } = user
+    ? await supabase.from('profiles').select('wechat_id, is_admin, no_show_count').eq('id', user.id).single()
+    : { data: null };
   const isAdmin = userProfile?.is_admin === true;
+  const testSqueeze = isAdmin && sp?.testSqueeze === '1';
+
+  const admin = createAdminClient();
+  let reservations: unknown[] | null = null;
+  let waitlist: unknown[] | null = null;
+
+  if (admin) {
+    const [res, wl] = await Promise.all([
+      admin
+        .from('reservations')
+        .select('id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, friend_avatar, attended, created_at, profiles(display_name, avatar_config, wechat_id, no_show_count, attendance_count)')
+        .eq('screening_id', id),
+      admin
+        .from('waitlist')
+        .select('id, position, user_id, profiles(display_name, avatar_config)')
+        .eq('screening_id', id)
+        .eq('status', 'waiting')
+        .order('position', { ascending: true }),
+    ]);
+    reservations = res.data ?? [];
+    waitlist = wl.data ?? [];
+    type P = { profiles?: { display_name?: string | null; avatar_config?: unknown; wechat_id?: string | null; no_show_count?: number | null; attendance_count?: number | null } | null; [k: string]: unknown };
+    if (!isAdmin) {
+      reservations = reservations.map((row: P) => {
+        const p = row.profiles;
+        const safeProfile = p
+          ? { display_name: p.display_name ?? null, avatar_config: p.avatar_config, no_show_count: p.no_show_count ?? 0, attendance_count: p.attendance_count ?? 0 }
+          : null;
+        return { ...row, profiles: safeProfile };
+      });
+    }
+  } else {
+    const [res, wl] = await Promise.all([
+      supabase
+        .from('reservations')
+        .select('id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, friend_avatar, attended, created_at, profiles(display_name, avatar_config, wechat_id, no_show_count, attendance_count)')
+        .eq('screening_id', id),
+      supabase
+        .from('waitlist')
+        .select('id, position, user_id, profiles(display_name, avatar_config)')
+        .eq('screening_id', id)
+        .eq('status', 'waiting')
+        .order('position', { ascending: true }),
+    ]);
+    reservations = res.data ?? [];
+    waitlist = wl.data ?? [];
+  }
 
   const dateStr = new Date(screening.screening_at).toLocaleDateString('en-GB', {
     weekday: 'short',
@@ -82,19 +123,16 @@ export default async function ScreeningPage({
   });
 
   return (
-    <ScreeningRedirect screeningId={id}>
+    <ScreeningRedirect screeningId={id} isAdmin={isAdmin}>
     <div className="max-w-4xl mx-auto px-4 py-6 pb-24 safe-area-inset-bottom bg-[#0f0f0f]">
-      <Link
-        href="/"
-        className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a] mb-4 inline-block transition-colors"
-      >
+      <BackButton className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a] mb-4 inline-block transition-colors">
         {t.screening.back}
-      </Link>
-      <h1 className="font-pixel-cjk text-xl md:text-2xl text-[#e8c84a] mb-0.5">
-        {room.name} — {dateStr}
+      </BackButton>
+      <h1 className="font-pixel-cjk text-lg md:text-xl text-[#e8c84a] mb-0.5">
+        {screening.title}
       </h1>
       <p className="font-pixel-cjk text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-6">
-        {screening.title} · {t.screening.tapToClaim}
+        {room.name} · {dateStr} · {isAdmin ? t.screening.adminViewSeatMapHint : t.screening.tapToClaim}
       </p>
       {isAdmin && (
         <div className="mb-4">
@@ -110,8 +148,21 @@ export default async function ScreeningPage({
           />
         </div>
       )}
+      {isAdmin && (
+        <AttendanceManager
+          screeningId={id}
+          reservations={(reservations ?? []) as unknown as Parameters<typeof AttendanceManager>[0]['reservations']}
+          labels={{
+            title: t.admin.attendanceTitle,
+            attended: t.admin.attended,
+            noShow: t.admin.noShow,
+            unset: t.admin.unset,
+            seatsCount: t.admin.seatsCount,
+          }}
+        />
+      )}
       <div className="border border-[#e8c84a] bg-[#0f0f0f] p-4 md:p-6" style={{ borderRadius: 0 }}>
-        <SeatMap
+        <ScreeningSeatMapWrapper
           screeningId={screening.id}
           screeningTitle={screening.title}
           room={{
@@ -125,8 +176,9 @@ export default async function ScreeningPage({
           initialWaitlist={(waitlist ?? []) as unknown as Parameters<typeof SeatMap>[0]['initialWaitlist']}
           waitlistMode={(screening.waitlist_mode as 'auto' | 'manual') ?? 'auto'}
           currentUser={user ? { id: user.id } : null}
-          currentUserProfile={userProfile ? { wechat_id: userProfile.wechat_id } : null}
+          currentUserProfile={userProfile ? { wechat_id: userProfile.wechat_id, no_show_count: userProfile.no_show_count ?? 0 } : null}
           isAdmin={isAdmin}
+          testSqueeze={testSqueeze}
         />
       </div>
     </div>

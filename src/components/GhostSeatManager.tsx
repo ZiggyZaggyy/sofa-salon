@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AvatarSVG from '@/components/AvatarSVG';
 import { jsonToConfig } from '@/lib/avatar';
+import { seatKeyToDisplayLabel } from '@/lib/furniture';
+import { useLocale } from '@/components/LocaleProvider';
 
 interface Ghost {
   seat_key: string;
@@ -18,8 +20,33 @@ interface Props {
 
 export default function GhostSeatManager({ screeningId, ghosts }: Props) {
   const router = useRouter();
+  const { t } = useLocale();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editingSeatKey, setEditingSeatKey] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+
+  const startRename = (g: Ghost) => {
+    setEditingSeatKey(g.seat_key);
+    setEditName(g.ghost_name ?? '');
+  };
+
+  const saveRename = async (seatKey: string) => {
+    const name = editName.trim();
+    setEditingSeatKey(null);
+    setError(null);
+    const res = await fetch('/api/ghost', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ screeningId, seatKey, ghost_name: name || null }),
+    });
+    if (res.ok) {
+      router.refresh();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError((data as { error?: string }).error ?? 'Failed to rename');
+    }
+  };
 
   const addGhost = async () => {
     setError(null);
@@ -93,16 +120,48 @@ export default function GhostSeatManager({ screeningId, ghosts }: Props) {
               size={24}
               pose="sit"
             />
-            <span className="text-[#888888] flex-1 truncate">
-              {g.ghost_name ?? '—'}
-            </span>
+            {editingSeatKey === g.seat_key ? (
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onBlur={() => saveRename(g.seat_key)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveRename(g.seat_key);
+                  if (e.key === 'Escape') {
+                    setEditingSeatKey(null);
+                    setEditName(g.ghost_name ?? '');
+                  }
+                }}
+                autoFocus
+                className="flex-1 min-w-0 bg-[#161616] border border-[#e8c84a] text-[#e8e4dc] px-2 py-1 text-[13px] outline-none placeholder:text-[#555]"
+                style={{ borderRadius: 0 }}
+                placeholder={t.admin.ghostNamePlaceholder}
+              />
+            ) : (
+              <>
+                <span className="text-[#888888] flex-1 truncate">
+                  {g.ghost_name ?? '—'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => startRename(g)}
+                  className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a]"
+                  style={{ borderRadius: 0 }}
+                  title={t.admin.renameGhost}
+                >
+                  {t.admin.renameGhost}
+                </button>
+              </>
+            )}
             <span className="text-[#444444] text-[10px] truncate max-w-[80px]">
-              {g.seat_key}
+              {seatKeyToDisplayLabel(g.seat_key)}
             </span>
             <button
               type="button"
               onClick={() => removeGhost(g.seat_key)}
-              className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#f87171] hover:opacity-85"
+              disabled={editingSeatKey === g.seat_key}
+              className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#f87171] hover:opacity-85 disabled:opacity-50"
               style={{ borderRadius: 0 }}
             >
               Remove

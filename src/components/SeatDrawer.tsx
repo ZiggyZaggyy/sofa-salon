@@ -60,7 +60,7 @@ export default function SeatDrawer({ screening, onClose }: Props) {
           .single(),
         supabase
           .from('reservations')
-          .select('id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, profiles(display_name, avatar_config)')
+          .select('id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, friend_avatar, profiles(display_name, avatar_config, no_show_count, attendance_count)')
           .eq('screening_id', screening.id),
         supabase
           .from('waitlist')

@@ -1,5 +1,6 @@
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
-import { t } from '@/lib/i18n';
+import { getT, type Locale } from '@/lib/i18n';
 import { notFound } from 'next/navigation';
 import { redirect } from 'next/navigation';
 import AdminRoomEditor from './AdminRoomEditor';
@@ -11,6 +12,9 @@ export default async function EditRoomPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  const locale: Locale = cookieStore.get('sofa-salon-locale')?.value === 'zh' ? 'zh' : 'en';
+  const t = getT(locale);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -38,7 +42,7 @@ export default async function EditRoomPage({
   const decorations = (room.decorations_json as Array<unknown>) ?? [];
 
   return (
-    <div className="h-screen flex flex-col bg-[#0f0f0f]">
+    <div className="h-[calc(100vh-90px)] flex flex-col bg-[#0f0f0f]">
       <AdminRoomEditor
         roomId={room.id}
         initialName={room.name}

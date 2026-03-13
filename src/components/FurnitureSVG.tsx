@@ -28,6 +28,7 @@ function bw(p: FurniturePiece): number {
   if (p.type === 'sofa-l') return lSofaSeatSplit(p.seats)[0] * 52;
   if (p.type === 'chair') return 44;
   if (p.type === 'bench') return 36;
+  if (p.type === 'floor') return 40;
   return 32;
 }
 
@@ -37,6 +38,7 @@ function bh(p: FurniturePiece): number {
     return 56 + lSofaSeatSplit(p.seats)[1] * 52;
   if (p.type === 'chair') return 44;
   if (p.type === 'bench') return 30;
+  if (p.type === 'floor') return 40;
   return 32;
 }
 
@@ -373,6 +375,22 @@ function CushionShape({ piece }: { piece: FurniturePiece }) {
   );
 }
 
+/** Floor seat: sit on the ground (e.g. mat / spot). */
+function FloorShape({ piece }: { piece: FurniturePiece }) {
+  const { x, y, color } = piece;
+  const dark = darken(color, 25);
+  const light = lighten(color, 12);
+  const r = 18;
+  return (
+    <>
+      <circle cx={x} cy={y} r={r + 3} fill="#00000030" />
+      <circle cx={x} cy={y} r={r} fill={color} />
+      <ellipse cx={x} cy={y - 4} rx={r * 0.7} ry={r * 0.25} fill={light} opacity={0.6} />
+      <circle cx={x} cy={y} r={r} fill="none" stroke={dark} strokeWidth={2} />
+    </>
+  );
+}
+
 interface Props {
   piece: FurniturePiece;
   selected?: boolean;
@@ -408,6 +426,7 @@ function FurnitureSVG({ piece, selected, onSelect }: Props) {
       {type === 'chair' && <ChairShape piece={piece} />}
       {type === 'bench' && <BenchShape piece={piece} />}
       {type === 'cushion' && <CushionShape piece={piece} />}
+      {type === 'floor' && <FloorShape piece={piece} />}
     </g>
   );
 }

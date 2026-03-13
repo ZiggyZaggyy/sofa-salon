@@ -5,8 +5,13 @@ import { useCallback, useEffect } from 'react';
 interface Props {
   open: boolean;
   onClose: () => void;
-  seatLabel: string;
+  seatLabel?: string;
+  seatLabels?: string[];
   screeningTitle: string;
+  /** When claiming additional seat(s) for a friend; shown as modal title when single seat */
+  titleOverride?: string;
+  /** Note e.g. "This seat will show as \"XXX's friend\"." */
+  friendNote?: string | null;
   children: React.ReactNode;
   isMobile?: boolean;
 }
@@ -14,11 +19,17 @@ interface Props {
 export default function ClaimModal({
   open,
   onClose,
-  seatLabel,
+  seatLabel = '',
+  seatLabels,
   screeningTitle,
+  titleOverride,
+  friendNote,
   children,
   isMobile = false,
 }: Props) {
+  const labels = seatLabels ?? (seatLabel ? [seatLabel] : []);
+  const isMulti = labels.length > 1;
+  const title = titleOverride ?? (isMulti ? `Claim ${labels.length} seats` : 'Claim seat');
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -55,10 +66,17 @@ export default function ClaimModal({
       >
         ×
       </button>
-      <h2 className="font-serif text-xl italic text-[#e8c84a] mb-0.5">Claim seat</h2>
+      <h2 className="font-serif text-xl italic text-[#e8c84a] mb-0.5">
+        {title}
+      </h2>
       <p className={`font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] ${isMobile ? 'mb-3' : 'mb-6'}`}>
-        {seatLabel} · {screeningTitle}
+        {isMulti ? labels.map((l, i) => `${i + 1}. ${l}`).join(' · ') : labels[0]} · {screeningTitle}
       </p>
+      {friendNote && (
+        <p className="font-mono text-[12px] text-[#888888] mb-3">
+          {friendNote}
+        </p>
+      )}
       {children}
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useLocale } from '@/components/LocaleProvider';
 import type { FurniturePiece, Decoration } from '@/lib/furniture';
@@ -13,12 +13,13 @@ interface Props {
 
 export default function SeatMapInline({ screeningId, roomId }: Props) {
   const { t } = useLocale();
+  const [refreshKey, setRefreshKey] = useState(0);
   const [data, setData] = useState<{
     room: { furniture: FurniturePiece[]; decorations: Decoration[]; canvasW: number; canvasH: number } | null;
     reservations: unknown[];
     waitlist: unknown[];
     user: { id: string } | null;
-    profile: { wechat_id: string | null; is_admin?: boolean } | null;
+    profile: { wechat_id: string | null; is_admin?: boolean; no_show_count?: number } | null;
     squeezeNote: string | null;
     waitlistMode: 'auto' | 'manual';
     screeningTitle: string;
@@ -28,68 +29,45 @@ export default function SeatMapInline({ screeningId, roomId }: Props) {
     const supabase = createClient();
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
-      const [
-        { data: screening },
-        { data: reservations },
-        { data: waitlist },
-        { data: profileData },
-      ] = await Promise.all([
-        supabase
-          .from('screenings')
-          .select('title, squeeze_note, waitlist_mode, rooms(furniture_json, decorations_json, canvas_w, canvas_h)')
-          .eq('id', screeningId)
-          .single(),
-        supabase
-          .from('reservations')
-          .select('id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, profiles(display_name, avatar_config, wechat_id)')
-          .eq('screening_id', screeningId),
-        supabase
-          .from('waitlist')
-          .select('id, position, user_id, profiles(display_name, avatar_config)')
-          .eq('screening_id', screeningId)
-          .eq('status', 'waiting')
-          .order('position', { ascending: true }),
-        user
-          ? supabase.from('profiles').select('wechat_id, is_admin').eq('id', user.id).single()
-          : Promise.resolve({ data: null }),
+      const [seatmapRes, profileRes] = await Promise.all([
+        fetch(`/api/screenings/${screeningId}/seatmap`, { credentials: 'include' }),
+        user ? supabase.from('profiles').select('wechat_id, is_admin, no_show_count').eq('id', user.id).single() : Promise.resolve({ data: null }),
       ]);
-      const profile = profileData ?? null;
+      const profile = (profileRes as { data: unknown }).data as { wechat_id: string | null; is_admin?: boolean; no_show_count?: number } | null;
 
-      const r = screening?.rooms;
-      const roomRaw = Array.isArray(r) ? r[0] : r;
-      const raw = roomRaw as {
-        furniture_json?: unknown;
-        decorations_json?: unknown;
-        canvas_w?: number;
-        canvas_h?: number;
-      } | undefined;
+      if (!seatmapRes.ok) {
+        setData({
+          room: null,
+          reservations: [],
+          waitlist: [],
+          user: user ? { id: user.id } : null,
+          profile,
+          squeezeNote: null,
+          waitlistMode: 'auto',
+          screeningTitle: '',
+        });
+        return;
+      }
 
-      const room = raw
-        ? {
-            furniture: (Array.isArray(raw.furniture_json)
-              ? raw.furniture_json
-              : JSON.parse(typeof raw.furniture_json === 'string' ? raw.furniture_json : '[]')) as FurniturePiece[],
-            decorations: (Array.isArray(raw.decorations_json)
-              ? raw.decorations_json
-              : JSON.parse(typeof raw.decorations_json === 'string' ? raw.decorations_json : '[]')) as Decoration[],
-            canvasW: raw.canvas_w ?? 600,
-            canvasH: raw.canvas_h ?? 400,
-          }
-        : null;
-
+      const payload = await seatmapRes.json();
+      const room = payload.room as { furniture: FurniturePiece[]; decorations: Decoration[]; canvasW: number; canvasH: number } | null;
       setData({
         room,
-        reservations: reservations ?? [],
-        waitlist: waitlist ?? [],
+        reservations: payload.reservations ?? [],
+        waitlist: payload.waitlist ?? [],
         user: user ? { id: user.id } : null,
-        profile,
-        squeezeNote: (screening as { squeeze_note?: string | null })?.squeeze_note ?? null,
-        waitlistMode: ((screening as { waitlist_mode?: string | null })?.waitlist_mode as 'auto' | 'manual') ?? 'auto',
-        screeningTitle: (screening as { title?: string })?.title ?? '',
+        profile: profile ?? null,
+        squeezeNote: payload.squeezeNote ?? null,
+        waitlistMode: (payload.waitlistMode as 'auto' | 'manual') ?? 'auto',
+        screeningTitle: payload.screeningTitle ?? '',
       });
     }
     load();
-  }, [screeningId]);
+  }, [screeningId, refreshKey]);
+
+  const refetchReservations = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
 
   if (!data) {
     return (
@@ -146,7 +124,8 @@ export default function SeatMapInline({ screeningId, roomId }: Props) {
       waitlistMode={data.waitlistMode}
       currentUser={data.user}
       currentUserProfile={data.profile}
-      isAdmin={data.profile?.is_admin === true}
+      isAdmin={false}
+      onReservationsChange={refetchReservations}
     />
   );
 }

@@ -1,10 +1,15 @@
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
-import Link from 'next/link';
 import { APP_NAME_PARTS } from '@/lib/config';
-import { t } from '@/lib/i18n';
+import BackButton from '@/components/BackButton';
+import { getT, type Locale } from '@/lib/i18n';
+import RatingsExportButtons, { type RatingsExportRow } from './RatingsExportButtons';
 
 export default async function AdminRatingsPage() {
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  const locale: Locale = cookieStore.get('sofa-salon-locale')?.value === 'zh' ? 'zh' : 'en';
+  const t = getT(locale);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -23,20 +28,28 @@ export default async function AdminRatingsPage() {
   const now = new Date().toISOString();
   const { data: pastScreenings } = await supabase
     .from('screenings')
-    .select('id, title, screening_at')
+    .select('id, title, description, year, director, duration_minutes, screening_at')
     .lt('screening_at', now)
-    .order('screening_at', { ascending: false })
-    .limit(50);
+    .order('screening_at', { ascending: false });
 
   const ids = (pastScreenings ?? []).map((s) => s.id);
   const ratingStats: Record<string, { count: number; avg: number }> = {};
+  const attendanceCount: Record<string, number> = {};
+
   if (ids.length > 0) {
-    const { data: ratings } = await supabase
-      .from('screening_ratings')
-      .select('screening_id, rating')
-      .in('screening_id', ids);
+    const [ratingsRes, reservationsRes] = await Promise.all([
+      supabase
+        .from('screening_ratings')
+        .select('screening_id, rating')
+        .in('screening_id', ids),
+      supabase
+        .from('reservations')
+        .select('screening_id, attended')
+        .in('screening_id', ids),
+    ]);
+
     const byScreening: Record<string, number[]> = {};
-    for (const r of ratings ?? []) {
+    for (const r of ratingsRes.data ?? []) {
       const sid = (r as { screening_id: string }).screening_id;
       if (!byScreening[sid]) byScreening[sid] = [];
       byScreening[sid].push((r as { rating: number }).rating);
@@ -48,29 +61,53 @@ export default async function AdminRatingsPage() {
         avg: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0,
       };
     }
+
+    for (const sid of ids) attendanceCount[sid] = 0;
+    for (const r of reservationsRes.data ?? []) {
+      if ((r as { attended: boolean | null }).attended === true) {
+        const sid = (r as { screening_id: string }).screening_id;
+        attendanceCount[sid] = (attendanceCount[sid] ?? 0) + 1;
+      }
+    }
   }
+
+  const exportData: RatingsExportRow[] = (pastScreenings ?? []).map((s) => {
+    const stats = ratingStats[s.id] ?? { count: 0, avg: 0 };
+    return {
+      id: s.id,
+      title: s.title ?? '',
+      description: (s as { description?: string | null }).description ?? null,
+      year: (s as { year?: number | null }).year ?? null,
+      director: (s as { director?: string | null }).director ?? null,
+      duration_minutes: (s as { duration_minutes?: number | null }).duration_minutes ?? null,
+      screening_at: s.screening_at,
+      attendance_count: attendanceCount[s.id] ?? 0,
+      rating_count: stats.count,
+      rating_avg: stats.avg,
+    };
+  });
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 bg-[#0f0f0f]">
-      <Link
-        href="/admin"
-        className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a] mb-6 inline-block transition-colors"
-      >
+      <BackButton className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a] mb-6 inline-block transition-colors">
         {t.admin.backToAdmin}
-      </Link>
-      <h1 className="font-pixel text-xl text-[#e8e4dc] mb-1">
-        {APP_NAME_PARTS[0]} <span className="text-[#e8c84a]">Admin</span>
+      </BackButton>
+      <h1 className="font-mono text-xl text-[#e8e4dc] mb-1">
+        {APP_NAME_PARTS[0]}{APP_NAME_PARTS.slice(1).join('')}{' '}
+        <span className="text-[#e8c84a]">{t.admin.title}</span>
       </h1>
       <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-6">
         {t.admin.ratingsReport}
       </p>
+
+      <RatingsExportButtons data={exportData} />
 
       <div className="overflow-x-auto">
         <table className="w-full font-mono text-[13px] border-collapse">
           <thead>
             <tr className="text-left border-b border-[#2a2a2a]">
               <th className="py-3 pr-4 text-[#e8c84a] uppercase tracking-wider">{t.admin.pastScreenings}</th>
-              <th className="py-3 pr-4 text-[#888888] uppercase tracking-wider">Date</th>
+              <th className="py-3 pr-4 text-[#888888] uppercase tracking-wider">{t.admin.date}</th>
               <th className="py-3 pr-4 text-[#888888] uppercase tracking-wider">{t.admin.numRatings}</th>
               <th className="py-3 text-[#888888] uppercase tracking-wider">{t.admin.avgRating}</th>
             </tr>

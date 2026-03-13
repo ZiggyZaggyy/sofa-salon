@@ -187,7 +187,10 @@ export async function DELETE(req: NextRequest) {
     );
   }
 
-  const { error } = await supabase
+  const admin = (await import('@/lib/supabase/admin')).createAdminClient();
+  const client = admin ?? supabase;
+
+  const { error } = await client
     .from('reservations')
     .delete()
     .eq('screening_id', screeningId)
@@ -198,4 +201,56 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
   return NextResponse.json({ ok: true });
+}
+
+/** Admin-only: rename a ghost (ghost_name). Use service-role so RLS does not block the update. */
+export async function PATCH(req: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.id) {
+    return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
+  }
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single();
+  if (!profile?.is_admin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const body = await req.json();
+  const { screeningId, seatKey, ghost_name } = body;
+  if (!screeningId || !seatKey) {
+    return NextResponse.json(
+      { error: 'screeningId and seatKey required' },
+      { status: 400 }
+    );
+  }
+
+  const updatePayload: { ghost_name: string | null } = {
+    ghost_name: typeof ghost_name === 'string' ? ghost_name.trim() || null : null,
+  };
+
+  const admin = (await import('@/lib/supabase/admin')).createAdminClient();
+  const client = admin ?? supabase;
+
+  const { data: rows, error } = await client
+    .from('reservations')
+    .update(updatePayload)
+    .eq('screening_id', screeningId)
+    .eq('seat_key', seatKey)
+    .eq('is_ghost', true)
+    .select('id, ghost_name');
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  if (!rows?.length) {
+    return NextResponse.json({ error: 'Ghost reservation not found' }, { status: 404 });
+  }
+  const row = rows[0];
+  return NextResponse.json({ ok: true, ghost_name: row.ghost_name });
 }

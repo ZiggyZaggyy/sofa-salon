@@ -52,6 +52,31 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+/** Simple numeric hash of a string for deterministic picks. */
+function hashSeed(seed: string): number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function pickAt<T>(arr: T[], seed: number): T {
+  return arr[seed % arr.length];
+}
+
+/** Deterministic avatar config from a seed (e.g. reservation id). Use for friend fallback so friend never looks like user. */
+export function avatarConfigFromSeed(seed: string): AvatarConfig {
+  const h = hashSeed(seed);
+  return {
+    skinTone: pickAt(SKIN_TONES, h),
+    hairStyle: (h % 6) + 1,
+    hairColor: pickAt(HAIR_COLORS, h >>> 4),
+    topStyle: (h >>> 8) % 4 + 1,
+    topColor: pickAt(TOP_COLORS, h >>> 12),
+    eyeExpression: pickAt(EXPRESSIONS, h >>> 16),
+    accessory: pickAt(ACCESSORIES, h >>> 20),
+  };
+}
+
 export function randomAvatarConfig(): AvatarConfig {
   return {
     skinTone: pick(SKIN_TONES),

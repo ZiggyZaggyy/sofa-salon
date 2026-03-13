@@ -2,12 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import RoomEditor from '@/components/RoomEditor';
 import type { FurniturePiece } from '@/lib/furniture';
 import type { Decoration } from '@/lib/furniture';
+import { useLocale } from '@/components/LocaleProvider';
 
 export default function NewRoomPage() {
   const router = useRouter();
+  const { t } = useLocale();
   const [name, setName] = useState('Living Room');
 
   const handleSave = async (
@@ -34,6 +37,12 @@ export default function NewRoomPage() {
   return (
     <div className="h-screen flex flex-col bg-[#0f0f0f]">
       <div className="flex items-center gap-4 px-4 py-3 border-b border-[#2a2a2a] bg-[#161616]">
+        <Link
+          href="/admin/rooms"
+          className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a] shrink-0 transition-colors"
+        >
+          {t.admin.backToRooms}
+        </Link>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}

@@ -1,6 +1,7 @@
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
-import { notFound } from 'next/navigation';
-import { t } from '@/lib/i18n';
+import { notFound, redirect } from 'next/navigation';
+import { getT, type Locale } from '@/lib/i18n';
 import EditScreeningForm from './EditScreeningForm';
 
 export default async function EditScreeningPage({
@@ -10,6 +11,9 @@ export default async function EditScreeningPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  const locale: Locale = cookieStore.get('sofa-salon-locale')?.value === 'zh' ? 'zh' : 'en';
+  const t = getT(locale);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -34,6 +38,10 @@ export default async function EditScreeningPage({
     .single();
 
   if (!screening) notFound();
+
+  if (new Date(screening.screening_at) < new Date()) {
+    redirect('/admin');
+  }
 
   const { data: rooms } = await supabase
     .from('rooms')

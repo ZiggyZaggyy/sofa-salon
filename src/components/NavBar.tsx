@@ -8,7 +8,41 @@ import { useEffect, useState } from 'react';
 import { APP_NAME_PARTS, APP_TAGLINE } from '@/lib/config';
 import { useLocale } from '@/components/LocaleProvider';
 import AvatarSVG from '@/components/AvatarSVG';
+import PigeonIcon from '@/components/PigeonIcon';
 import { jsonToConfig } from '@/lib/avatar';
+import { getBadgeLevel } from '@/lib/badges';
+
+function AvatarAndBadge({
+  noShowCount,
+  attendanceCount,
+  profile,
+  size,
+}: {
+  noShowCount: number;
+  attendanceCount: number;
+  profile: { display_name: string; avatar_config: unknown; is_admin?: boolean } | null;
+  size: number;
+}) {
+  const isPigeon = noShowCount >= 3;
+  const badge = getBadgeLevel(attendanceCount);
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {isPigeon ? (
+        <PigeonIcon size={22} className="flex-shrink-0" title="Pigeon" />
+      ) : profile?.avatar_config ? (
+        <AvatarSVG config={jsonToConfig(profile.avatar_config)} size={size} pose="stand" />
+      ) : (
+        <div className="bg-cinema-s2 border border-cinema-border flex-shrink-0" style={{ width: size, height: size, borderRadius: 0 }} />
+      )}
+      {badge && (
+        <span className="text-sm leading-none" title={`${badge.labelEn} (${badge.label})`}>
+          {badge.emoji}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export default function NavBar() {
   const pathname = usePathname();
@@ -18,6 +52,8 @@ export default function NavBar() {
     display_name: string;
     avatar_config: unknown;
     is_admin?: boolean;
+    no_show_count?: number | null;
+    attendance_count?: number | null;
   } | null>(null);
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -36,11 +72,11 @@ export default function NavBar() {
     const supabase = createClient();
     supabase
       .from('profiles')
-      .select('display_name, avatar_config, is_admin')
+      .select('display_name, avatar_config, is_admin, no_show_count, attendance_count')
       .eq('id', user.id)
       .single()
       .then(({ data }) => setProfile(data ?? null));
-  }, [user]);
+  }, [user, pathname]);
 
   const signOut = async () => {
     setMobileMenuOpen(false);
@@ -58,9 +94,9 @@ export default function NavBar() {
   return (
     <header className="border-b border-[#2a2a2a] bg-[#0f0f0f] px-4 py-3 flex items-center justify-between sticky top-0 z-50 safe-area-inset-top">
       <Link href="/" className="font-pixel text-sm text-[#e8e4dc] no-underline flex flex-col min-w-0">
-        <span>
-          {APP_NAME_PARTS[0]}{' '}
-          <span className="text-[#e8c84a]">{APP_NAME_PARTS.slice(1).join(' ')}</span>
+          <span>
+          {APP_NAME_PARTS[0]}
+          <span className="text-[#e8c84a]">{APP_NAME_PARTS.slice(1).join('')}</span>
         </span>
         <span className="font-mono text-[9px] tracking-widest uppercase text-[#666] mt-0.5 truncate">
           {APP_TAGLINE}
@@ -100,15 +136,12 @@ export default function NavBar() {
               className="hidden md:flex items-center gap-2 min-w-[44px] min-h-[44px] justify-end"
               aria-label={t.nav.profile}
             >
-              {profile?.avatar_config ? (
-                <AvatarSVG
-                  config={jsonToConfig(profile.avatar_config)}
-                  size={32}
-                  pose="stand"
-                />
-              ) : (
-                <div className="w-8 h-8 bg-cinema-s2 border border-cinema-border" style={{ borderRadius: 0 }} />
-              )}
+              <AvatarAndBadge
+                noShowCount={profile?.no_show_count ?? 0}
+                attendanceCount={profile?.attendance_count ?? 0}
+                profile={profile}
+                size={32}
+              />
             </Link>
             <nav className="hidden md:flex items-center gap-4">
               <Link href="/" className={linkClass(pathname === '/')}>

@@ -1,11 +1,15 @@
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { APP_NAME_PARTS } from '@/lib/config';
-import { t } from '@/lib/i18n';
+import { getT, type Locale } from '@/lib/i18n';
 import AdminEvents from './AdminEvents';
 
 export default async function AdminPage() {
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  const locale: Locale = cookieStore.get('sofa-salon-locale')?.value === 'zh' ? 'zh' : 'en';
+  const t = getT(locale);
   const [{ data: { user } }, { data: screenings }] = await Promise.all([
     supabase.auth.getUser(),
     supabase
@@ -37,27 +41,27 @@ export default async function AdminPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 bg-[#0f0f0f]">
-      <h1 className="font-pixel text-xl text-[#e8e4dc] mb-1">
-        {APP_NAME_PARTS[0]}{' '}
-        <span className="text-[#e8c84a]">Admin</span>
+      <h1 className="font-mono text-xl text-[#e8e4dc] mb-1">
+        {APP_NAME_PARTS[0]}{APP_NAME_PARTS.slice(1).join('')}{' '}
+        <span className="text-[#e8c84a]">{t.admin.title}</span>
       </h1>
       <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-6">
         {t.admin.eventsAndWaitlist}
       </p>
       <div className="flex gap-4 mb-8 flex-wrap">
         <Link
+          href="/admin"
+          className="bg-[#e8c84a] text-[#0f0f0f] px-4 py-2 font-mono text-[10px] tracking-[0.2em] uppercase hover:opacity-85 transition-opacity"
+          style={{ borderRadius: 0 }}
+        >
+          {t.admin.events}
+        </Link>
+        <Link
           href="/admin/rooms"
           className="border border-[#2a2a2a] text-[#888888] px-4 py-2 font-mono text-[10px] tracking-[0.2em] uppercase hover:border-[#e8c84a] hover:text-[#e8c84a] transition-colors"
           style={{ borderRadius: 0 }}
         >
           {t.admin.rooms}
-        </Link>
-        <Link
-          href="/admin/screenings/new"
-          className="bg-[#e8c84a] text-[#0f0f0f] px-4 py-2 font-mono text-[10px] tracking-[0.2em] uppercase hover:opacity-85 transition-opacity"
-          style={{ borderRadius: 0 }}
-        >
-          {t.admin.newEvent}
         </Link>
         <Link
           href="/admin/ratings"
@@ -72,6 +76,29 @@ export default async function AdminPage() {
           style={{ borderRadius: 0 }}
         >
           {t.admin.tickerManage}
+        </Link>
+        <Link
+          href="/admin/settings"
+          className="border border-[#2a2a2a] text-[#888888] px-4 py-2 font-mono text-[10px] tracking-[0.2em] uppercase hover:border-[#e8c84a] hover:text-[#e8c84a] transition-colors"
+          style={{ borderRadius: 0 }}
+        >
+          {t.admin.settings}
+        </Link>
+        <Link
+          href="/admin/test"
+          className="border border-[#2a2a2a] text-[#888888] px-4 py-2 font-mono text-[10px] tracking-[0.2em] uppercase hover:border-[#e8c84a] hover:text-[#e8c84a] transition-colors"
+          style={{ borderRadius: 0 }}
+        >
+          {t.admin.testFeatures}
+        </Link>
+      </div>
+      <div className="mb-6">
+        <Link
+          href="/admin/screenings/new"
+          className="inline-block bg-[#e8c84a] text-[#0f0f0f] px-4 py-2 font-mono text-[10px] tracking-[0.2em] uppercase hover:opacity-85 transition-opacity"
+          style={{ borderRadius: 0 }}
+        >
+          {t.admin.newEvent}
         </Link>
       </div>
       <AdminEvents screenings={screenings ?? []} />

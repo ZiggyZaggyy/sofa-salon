@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { sendWaitlistPromotion } from '@/lib/email';
+import { sendCancelConfirmation, sendWaitlistPromotion } from '@/lib/email';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -33,6 +33,49 @@ export async function POST(req: NextRequest) {
   const screeningId = reservation.screening_id;
   const freedSeatKey = reservation.seat_key;
 
+  const [{ data: screening }, { data: configRows }] = await Promise.all([
+    supabase
+      .from('screenings')
+      .select('screening_at, waitlist_mode, title')
+      .eq('id', screeningId)
+      .single(),
+    supabase.from('ticker_config').select('key, value').eq('key', 'cancel_no_show_hours'),
+  ]);
+
+  const configHoursRow = (configRows ?? []).find((r: { key: string }) => r.key === 'cancel_no_show_hours');
+  const hours = configHoursRow
+    ? Math.max(0, parseInt((configHoursRow as { value: string }).value, 10) || 24)
+    : 24;
+  const windowMs = hours * 60 * 60 * 1000;
+
+  const countsAsNoShow =
+    screening?.screening_at &&
+    (() => {
+      const at = new Date(screening.screening_at).getTime();
+      const now = Date.now();
+      return at > now && at - now <= windowMs;
+    })();
+
+  let noShowCount: number | undefined;
+  if (countsAsNoShow) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('no_show_count')
+      .eq('id', user.id)
+      .single();
+    const current = Math.min(Number(profile?.no_show_count ?? 0), 3);
+    const next = Math.min(current + 1, 3);
+    await supabase
+      .from('profiles')
+      .update({ no_show_count: next })
+      .eq('id', user.id);
+    await supabase
+      .from('profiles')
+      .update({ consecutive_attendances: 0 })
+      .eq('id', user.id);
+    noShowCount = next;
+  }
+
   const { error: delError } = await supabase
     .from('reservations')
     .delete()
@@ -42,11 +85,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: delError.message }, { status: 400 });
   }
 
-  const { data: screening } = await supabase
-    .from('screenings')
-    .select('waitlist_mode, title, screening_at')
-    .eq('id', screeningId)
-    .single();
+  // Send cancel confirmation to the user who cancelled
+  let cancelUserEmail: string | undefined = user.email ?? undefined;
+  if (!cancelUserEmail) {
+    const admin = (await import('@/lib/supabase/admin')).createAdminClient();
+    if (admin) {
+      const { data: u } = await admin.auth.admin.getUserById(user.id);
+      cancelUserEmail = u?.user?.email;
+    }
+  }
+  if (cancelUserEmail) {
+    try {
+      await sendCancelConfirmation({
+        to: cancelUserEmail,
+        screeningTitle: screening?.title ?? 'Screening',
+        seatKey: freedSeatKey,
+        screeningAt: screening?.screening_at ? new Date(screening.screening_at).toLocaleString() : '',
+      });
+    } catch {
+      // ignore
+    }
+  }
 
   if (screening?.waitlist_mode === 'auto') {
     const { data: first } = await supabase
@@ -59,12 +118,6 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (first) {
-      const { data: promotedProfile } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('id', first.user_id)
-        .single();
-
       await supabase.from('reservations').insert({
         screening_id: screeningId,
         user_id: first.user_id,
@@ -102,5 +155,23 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true });
+  // Return updated reservations so the client can show the promoted person (and current state) immediately
+  const adminClient = (await import('@/lib/supabase/admin')).createAdminClient();
+  let updatedReservations: unknown[] | null = null;
+  if (adminClient) {
+    const { data: rows } = await adminClient
+      .from('reservations')
+      .select('id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, friend_avatar, attended, created_at, profiles(display_name, avatar_config, wechat_id, no_show_count, attendance_count)')
+      .eq('screening_id', screeningId);
+    updatedReservations = rows ?? [];
+  }
+
+  return NextResponse.json({
+    ok: true,
+    ...(noShowCount !== undefined && {
+      noShowCount,
+      isPigeon: noShowCount >= 3,
+    }),
+    ...(updatedReservations && { reservations: updatedReservations }),
+  });
 }

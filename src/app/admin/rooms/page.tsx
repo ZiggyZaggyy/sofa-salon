@@ -1,11 +1,15 @@
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { APP_NAME_PARTS } from '@/lib/config';
-import { t } from '@/lib/i18n';
+import { getT, type Locale } from '@/lib/i18n';
 
 export default async function AdminRoomsPage() {
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  const locale: Locale = cookieStore.get('sofa-salon-locale')?.value === 'zh' ? 'zh' : 'en';
+  const t = getT(locale);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -28,19 +32,25 @@ export default async function AdminRoomsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 bg-[#0f0f0f]">
-      <h1 className="font-pixel text-xl text-[#e8e4dc] mb-1">
-        {APP_NAME_PARTS[0]}{' '}
-        <span className="text-[#e8c84a]">Rooms</span>
+      <Link
+        href="/admin"
+        className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a] mb-6 inline-block transition-colors"
+      >
+        {t.admin.backToAdmin}
+      </Link>
+      <h1 className="font-mono text-xl text-[#e8e4dc] mb-1">
+        {APP_NAME_PARTS[0]}{APP_NAME_PARTS.slice(1).join('')}{' '}
+        <span className="text-[#e8c84a]">{t.admin.rooms}</span>
       </h1>
       <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-6">
-        Saved layouts
+        {t.admin.savedLayouts}
       </p>
       <Link
         href="/admin/rooms/new"
         className="inline-block bg-[#e8c84a] text-[#0f0f0f] px-4 py-2 font-mono text-[10px] tracking-[0.2em] uppercase mb-6 hover:opacity-85 transition-opacity"
         style={{ borderRadius: 0 }}
       >
-        New room
+        {t.admin.newRoom}
       </Link>
       <ul className="space-y-2">
         {(rooms ?? []).map((room) => (
