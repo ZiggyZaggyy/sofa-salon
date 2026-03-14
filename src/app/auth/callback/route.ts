@@ -2,13 +2,33 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 /**
+ * Get the public origin for redirects (avoids localhost when deployed behind a proxy).
+ * Prefer x-forwarded-host / x-forwarded-proto, then NEXT_PUBLIC_APP_URL, then request.url.
+ */
+function getRedirectOrigin(request: Request): string {
+  const url = new URL(request.url);
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  if (forwardedHost) {
+    const proto = forwardedProto ?? url.protocol.replace(':', '');
+    return `${proto}://${forwardedHost}`;
+  }
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    const base = process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+    return base;
+  }
+  return url.origin;
+}
+
+/**
  * OAuth callback for Google (or other OAuth) sign-in.
  */
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/';
   const safeNext = next.startsWith('/') ? next : '/';
+  const origin = getRedirectOrigin(request);
 
   if (code) {
     const supabase = await createClient();
