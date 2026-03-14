@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useLocale } from '@/components/LocaleProvider';
+import TicketStubExport from './TicketStubExport';
 
 export interface PastScreening {
   screeningId: string;
@@ -145,6 +146,7 @@ export default function WatchHistory({ items }: Props) {
           );
         })}
       </ul>
+      <TicketStubExport items={items} />
     </div>
   );
 }

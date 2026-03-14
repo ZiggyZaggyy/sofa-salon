@@ -53,6 +53,23 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
     router.refresh();
   };
 
+  const signInWithGoogle = async () => {
+    setError(null);
+    setLoading(true);
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+      },
+    });
+    setLoading(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+  };
+
   return (
     <div className="w-full max-w-sm">
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); signIn(e); }}>
@@ -115,27 +132,17 @@ export default function LoginForm({ redirectTo = '/' }: LoginFormProps) {
         </div>
       </form>
 
-      {/* ——— Google OAuth (commented out for email/password testing) ——— */}
-      {/* const signInWithGoogle = async () => {
-        const supabase = createClient();
-        await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
-          },
-        });
-      }; */}
-      {/* <button
-        type="button"
-        onClick={signInWithGoogle}
-        className="w-full bg-[#e8c84a] text-[#0f0f0f] font-mono text-[10px] tracking-[0.2em] uppercase py-3 px-8 min-h-[44px] hover:opacity-85 active:scale-[0.97] transition-all"
-        style={{ borderRadius: 0 }}
-      >
-        Sign in with Google
-      </button>
-      <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#444444] mt-4 text-center">
-        No other login options
-      </p> */}
+      <div className="mt-4 pt-4 border-t border-[#2a2a2a]">
+        <button
+          type="button"
+          onClick={signInWithGoogle}
+          disabled={loading}
+          className="w-full bg-[#e8c84a] text-[#0f0f0f] font-mono text-[10px] tracking-[0.2em] uppercase py-3 px-8 min-h-[44px] hover:opacity-85 active:scale-[0.97] transition-all disabled:opacity-60"
+          style={{ borderRadius: 0 }}
+        >
+          {locale === 'zh' ? '使用 Google 登录' : 'Sign in with Google'}
+        </button>
+      </div>
     </div>
   );
 }

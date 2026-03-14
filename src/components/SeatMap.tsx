@@ -126,6 +126,9 @@ export default function SeatMap({
   const [cancelModalReservations, setCancelModalReservations] = useState<Reservation[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [showCancelEasterEgg, setShowCancelEasterEgg] = useState(false);
+  const [pendingCancelListEasterEgg, setPendingCancelListEasterEgg] = useState<Reservation[]>([]);
+  const YOUTUBE_SHORTS_EMBED = 'https://www.youtube.com/embed/Gd5YJUGlOdg';
   const [seatError, setSeatError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -333,8 +336,21 @@ export default function SeatMap({
     if (current.size === 0) return;
     const list = myReservations.filter((r) => current.has(r.seat_key));
     if (list.length === 0) return;
-    setCancelModalReservations(list);
+    setPendingCancelListEasterEgg(list);
+    setShowCancelEasterEgg(true);
   }, [myReservations]);
+
+  const giveUpEasterEgg = useCallback(() => {
+    setShowCancelEasterEgg(false);
+    setPendingCancelListEasterEgg([]);
+  }, []);
+
+  const confirmCancelEasterEgg = useCallback(() => {
+    const list = pendingCancelListEasterEgg;
+    setShowCancelEasterEgg(false);
+    setPendingCancelListEasterEgg([]);
+    if (list.length > 0) setCancelModalReservations(list);
+  }, [pendingCancelListEasterEgg]);
 
   const closeCancelModal = useCallback(() => {
     setCancelModalReservations(null);
@@ -1053,6 +1069,44 @@ export default function SeatMap({
         loading={loading}
         isMobile={isMobile}
       />
+
+      {/* Easter egg: video + single yellow Confirm; after Confirm, user sees the real cancel modal where they can cancel or not */}
+      {showCancelEasterEgg && pendingCancelListEasterEgg.length > 0 && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80"
+          onClick={giveUpEasterEgg}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Video"
+        >
+          <div
+            className="bg-[#0f0f0f] border border-[#e8c84a] w-full max-w-[280px] relative flex flex-col items-center p-4"
+            style={{ borderRadius: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-full aspect-[9/16] max-h-[50vh] bg-black flex-shrink-0">
+              <iframe
+                title="YouTube Shorts"
+                src={YOUTUBE_SHORTS_EMBED}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; web-share"
+                allowFullScreen
+              />
+            </div>
+            <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mt-3 text-center">
+              {t.screening.cancelEasterEggVideoLabel}
+            </p>
+            <button
+              type="button"
+              onClick={confirmCancelEasterEgg}
+              className="mt-4 w-full font-mono text-[10px] tracking-[0.2em] uppercase py-3 bg-[#e8c84a] text-[#0f0f0f] hover:opacity-90 transition-opacity"
+              style={{ borderRadius: 0 }}
+            >
+              {t.screening.cancelEasterEggConfirm}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* User: cancel reservation modal (opened from Cancel button after selecting seats) */}
       {cancelModalReservations && cancelModalReservations.length > 0 && (

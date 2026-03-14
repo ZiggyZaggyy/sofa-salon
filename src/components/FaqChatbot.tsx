@@ -37,7 +37,8 @@ type StateId =
   | 'NONSENSE_COO'
   | 'NONSENSE_COO_DEEP'
   | 'NONSENSE_THANKS'
-  | 'NONSENSE_FOREVER';
+  | 'NONSENSE_FOREVER'
+  | 'NONSENSE_MY_STORY';
 
 type State = {
   id: StateId;
@@ -344,8 +345,15 @@ const STATES: Record<StateId, State> = {
       { label_zh: '咕', label_en: 'Coo', next: 'NONSENSE_COO' },
       { label_zh: '谢谢', label_en: 'Thanks', next: 'NONSENSE_THANKS' },
       { label_zh: '我想永远是鸽子', label_en: 'I want to be a pigeon forever', next: 'NONSENSE_FOREVER' },
+      { label_zh: '我的故事', label_en: 'My story', next: 'NONSENSE_MY_STORY' },
       { label_zh: '← 返回', label_en: 'Back', next: 'ROOT' },
     ],
+  },
+  NONSENSE_MY_STORY: {
+    id: 'NONSENSE_MY_STORY',
+    messages_zh: ['咕。这是「我的故事」。', 'https://youtube.com/shorts/Gd5YJUGlOdg'],
+    messages_en: ['Coo. This is "My story".', 'https://youtube.com/shorts/Gd5YJUGlOdg'],
+    options: [{ label_zh: '返回主菜单', label_en: 'Back to menu', next: 'ROOT' }],
   },
   NONSENSE_TASTY: {
     id: 'NONSENSE_TASTY',

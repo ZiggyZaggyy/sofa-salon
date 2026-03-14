@@ -1,26 +1,22 @@
-// import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 /**
- * OAuth callback — used only for Google (or other OAuth) sign-in.
- * For email/password auth there is no callback; signIn/signUp redirect on the client.
- * Commented out so we can test with email/password; uncomment to re-enable Google OAuth.
+ * OAuth callback for Google (or other OAuth) sign-in.
  */
 export async function GET(request: Request) {
-  // const { searchParams, origin } = new URL(request.url);
-  // const code = searchParams.get('code');
-  // const next = searchParams.get('next') ?? '/';
+  const { searchParams, origin } = new URL(request.url);
+  const code = searchParams.get('code');
+  const next = searchParams.get('next') ?? '/';
+  const safeNext = next.startsWith('/') ? next : '/';
 
-  // if (code) {
-  //   const supabase = await createClient();
-  //   const { error } = await supabase.auth.exchangeCodeForSession(code);
-  //   if (!error) {
-  //     return NextResponse.redirect(`${origin}${next}`);
-  //   }
-  // }
+  if (code) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      return NextResponse.redirect(`${origin}${safeNext}`);
+    }
+  }
 
-  // return NextResponse.redirect(`${origin}/auth/login?error=auth`);
-
-  const { origin } = new URL(request.url);
-  return NextResponse.redirect(`${origin}/auth/login`);
+  return NextResponse.redirect(`${origin}/auth/login?error=auth`);
 }

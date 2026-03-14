@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { APP_NAME_PARTS } from '@/lib/config';
 import { getT, type Locale } from '@/lib/i18n';
 import AdminEvents from './AdminEvents';
+import AdminAnnouncement from './AdminAnnouncement';
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -108,6 +109,7 @@ export default async function AdminPage() {
           {t.admin.newEvent}
         </Link>
       </div>
+      <AdminAnnouncement />
       <AdminEvents screenings={screenings ?? []} />
     </div>
   );
