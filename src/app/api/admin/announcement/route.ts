@@ -50,7 +50,7 @@ export async function GET() {
   if (!screenings?.length) {
     return NextResponse.json({
       screenings: [],
-      registrationLink: REGISTRATION_LINK_PLACEHOLDER,
+      registrationLink: REGISTRATION_LINK,
     });
   }
 
