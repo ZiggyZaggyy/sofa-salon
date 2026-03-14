@@ -1,83 +1,73 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import type { ReceiptData } from '@/app/receipt/page';
 
-const PAPER_LEFT = 240;
 const PAPER_WIDTH = 200;
 const PAPER_BASE_HEIGHT = 500;
 const PER_FILM_HEIGHT = 58;
-const VIEWBOX_WIDTH = 680;
+const VIEWBOX_WIDTH_DESKTOP = 680;
+const VIEWBOX_WIDTH_MOBILE = 340;
 
 const PAPER_FILL = '#f5f0e8';
 const BG_FILL = '#0f0f0f';
 const FONT = "'Courier New', monospace";
 
-function JaggedEdge({ y, count = 17 }: { y: number; count?: number }) {
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      if (typeof window === 'undefined') return;
+      setIsMobile(window.innerWidth < 768);
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isMobile;
+}
+
+function JaggedEdge({ paperLeft, y, count = 17 }: { paperLeft: number; y: number; count?: number }) {
   const squares = [];
   for (let i = 0; i < count; i++) {
     squares.push(
-      <rect
-        key={i}
-        x={PAPER_LEFT + i * 12}
-        y={y}
-        width={6}
-        height={6}
-        fill={BG_FILL}
-      />
+      <rect key={i} x={paperLeft + i * 12} y={y} width={6} height={6} fill={BG_FILL} />
     );
   }
   return <>{squares}</>;
 }
 
-function EyesAndBeak({ paperTop }: { paperTop: number }) {
-  const cx = PAPER_LEFT + PAPER_WIDTH / 2; // 340 — beak centered between eyes
-  const leftEyeX = 304;
-  const rightEyeX = 354;
-  const eyeY = paperTop + 16; // 36 when paperTop=20 — eyes on either side of beak
-  const beakTopY = eyeY + 16; // 52 — beak just below eyes (two rows)
+function EyesAndBeak({ centerX, paperTop }: { centerX: number; paperTop: number }) {
+  const leftEyeX = centerX - 36;
+  const rightEyeX = centerX + 14;
+  const eyeY = paperTop + 16;
+  const beakTopY = eyeY + 16;
   return (
     <>
-      {/* Left eye: 22×22 gold, 14×14 black at +4, 4×4 white glint */}
       <rect x={leftEyeX} y={eyeY} width={22} height={22} fill="#c09020" />
       <rect x={leftEyeX + 4} y={eyeY + 4} width={14} height={14} fill="#1a1a1a" />
       <rect x={leftEyeX + 5} y={eyeY + 5} width={4} height={4} fill="#f5f0e8" />
-      {/* Right eye */}
       <rect x={rightEyeX} y={eyeY} width={22} height={22} fill="#c09020" />
       <rect x={rightEyeX + 4} y={eyeY + 4} width={14} height={14} fill="#1a1a1a" />
       <rect x={rightEyeX + 5} y={eyeY + 5} width={4} height={4} fill="#f5f0e8" />
-      {/* Beak: centered between eyes, two rows below eyes — 14×6, 8×4, 4×3 */}
-      <rect x={cx - 7} y={beakTopY} width={14} height={6} fill="#c04018" />
-      <rect x={cx - 4} y={beakTopY + 6} width={8} height={4} fill="#c04018" />
-      <rect x={cx - 2} y={beakTopY + 10} width={4} height={3} fill="#a03010" />
+      <rect x={centerX - 7} y={beakTopY} width={14} height={6} fill="#c04018" />
+      <rect x={centerX - 4} y={beakTopY + 6} width={8} height={4} fill="#c04018" />
+      <rect x={centerX - 2} y={beakTopY + 10} width={4} height={3} fill="#a03010" />
     </>
   );
 }
 
-function SeparatorDashes({ y }: { y: number }) {
+function SeparatorDashes({ paperLeft, y }: { paperLeft: number; y: number }) {
   return (
-    <text
-      x={PAPER_LEFT + 10}
-      y={y}
-      fontFamily={FONT}
-      fontSize={7}
-      fill="#ccc"
-      letterSpacing={1}
-    >
+    <text x={paperLeft + 10} y={y} fontFamily={FONT} fontSize={7} fill="#ccc" letterSpacing={1}>
       - - - - - - - - - - - - - - - - -
     </text>
   );
 }
 
-function DottedLine({ y }: { y: number }) {
+function DottedLine({ paperLeft, y }: { paperLeft: number; y: number }) {
   return (
-    <text
-      x={PAPER_LEFT + 10}
-      y={y}
-      fontFamily={FONT}
-      fontSize={7}
-      fill="#ddd"
-      letterSpacing={1}
-    >
+    <text x={paperLeft + 10} y={y} fontFamily={FONT} fontSize={7} fill="#ddd" letterSpacing={1}>
       · · · · · · · · · · · · · · · · ·
     </text>
   );
@@ -130,14 +120,17 @@ function barcodeWidths(): number[] {
 }
 
 export default function ReceiptSVG({ data }: { data: ReceiptData }) {
+  const isMobile = useIsMobile();
+  const viewBoxWidth = isMobile ? VIEWBOX_WIDTH_MOBILE : VIEWBOX_WIDTH_DESKTOP;
+  const paperLeft = (viewBoxWidth - PAPER_WIDTH) / 2;
+  const centerX = viewBoxWidth / 2;
+  const textLeft = paperLeft + 13;
+  const textRight = paperLeft + PAPER_WIDTH - 13;
+
   const { displayName, films, totalScreenings, totalMinutes, avgRating, timesBailed, receiptNumber, generatedAt } = data;
   const paperHeight = PAPER_BASE_HEIGHT + films.length * PER_FILM_HEIGHT;
   const paperTop = 20;
   const totalHeight = paperTop + paperHeight + 26;
-  const paperRight = PAPER_LEFT + PAPER_WIDTH;
-  const textLeft = PAPER_LEFT + 13;
-  const textRight = paperRight - 13;
-  const centerX = PAPER_LEFT + PAPER_WIDTH / 2;
 
   const headerY = paperTop + 68;
   const sep1Y = headerY + 44;
@@ -156,27 +149,27 @@ export default function ReceiptSVG({ data }: { data: ReceiptData }) {
     <svg
       id="receipt-svg"
       xmlns="http://www.w3.org/2000/svg"
-      viewBox={`0 0 ${VIEWBOX_WIDTH} ${totalHeight}`}
+      viewBox={`0 0 ${viewBoxWidth} ${totalHeight}`}
       width="100%"
-      style={{ maxWidth: VIEWBOX_WIDTH, background: BG_FILL }}
+      style={{ maxWidth: viewBoxWidth, background: BG_FILL }}
     >
-      <rect width={VIEWBOX_WIDTH} height={totalHeight} fill={BG_FILL} />
-      <rect x={PAPER_LEFT} y={paperTop} width={PAPER_WIDTH} height={paperHeight} fill={PAPER_FILL} />
-      <JaggedEdge y={paperTop} />
-      <JaggedEdge y={paperTop + paperHeight - 6} />
-      <EyesAndBeak paperTop={paperTop} />
+      <rect width={viewBoxWidth} height={totalHeight} fill={BG_FILL} />
+      <rect x={paperLeft} y={paperTop} width={PAPER_WIDTH} height={paperHeight} fill={PAPER_FILL} />
+      <JaggedEdge paperLeft={paperLeft} y={paperTop} />
+      <JaggedEdge paperLeft={paperLeft} y={paperTop + paperHeight - 6} />
+      <EyesAndBeak centerX={centerX} paperTop={paperTop} />
 
-      <text x={centerX} y={headerY} fontFamily={FONT} fontSize={13} fontWeight="bold" fill="#111" textAnchor="middle" letterSpacing={2}>ZiggyGraph</text>
+      <text x={centerX} y={headerY} fontFamily={FONT} fontSize={13} fontWeight="bold" fill="#111" textAnchor="middle" letterSpacing={2}>Ziggygraph</text>
       <text x={centerX} y={headerY + 12} fontFamily={FONT} fontSize={7} fill="#888" textAnchor="middle" letterSpacing={1}>SCREENING ROOM</text>
       <text x={centerX} y={headerY + 23} fontFamily={FONT} fontSize={7} fill="#bbb" textAnchor="middle">Canal St · Manhattan NY</text>
       <text x={centerX} y={headerY + 32} fontFamily={FONT} fontSize={7} fill="#888" textAnchor="middle">{displayName}</text>
 
-      <SeparatorDashes y={sep1Y} />
+      <SeparatorDashes paperLeft={paperLeft} y={sep1Y} />
       <text x={textLeft} y={session1Y} fontFamily={FONT} fontSize={7} fill="#555">VIEWING RECORD</text>
       <text x={textRight} y={session1Y} fontFamily={FONT} fontSize={7} fill="#555" textAnchor="end">#{receiptNumber}</text>
       <text x={textLeft} y={session2Y} fontFamily={FONT} fontSize={7} fill="#888">{formatSessionDate(generatedAt)}</text>
       <text x={textRight} y={session2Y} fontFamily={FONT} fontSize={7} fill="#888" textAnchor="end">ZIGGY</text>
-      <SeparatorDashes y={sep2Y} />
+      <SeparatorDashes paperLeft={paperLeft} y={sep2Y} />
       <text x={textLeft} y={colHeaderY} fontFamily={FONT} fontSize={7} fill="#777">FILM</text>
       <text x={centerX + 40} y={colHeaderY} fontFamily={FONT} fontSize={7} fill="#777" textAnchor="middle">DATE</text>
       <text x={textRight} y={colHeaderY} fontFamily={FONT} fontSize={7} fill="#777" textAnchor="end">MIN</text>
@@ -192,7 +185,7 @@ export default function ReceiptSVG({ data }: { data: ReceiptData }) {
             <text x={textRight} y={blockY + 11} fontFamily={FONT} fontSize={7} fill="#888" textAnchor="end">{film.durationMinutes ?? '—'}</text>
             <text x={textLeft} y={blockY + 22} fontFamily={FONT} fontSize={8} fill="#c8a000">{starStr}</text>
             <text x={textRight} y={blockY + 22} fontFamily={FONT} fontSize={7} fill="#aaa" textAnchor="end">{formatDate(film.screeningAt)}</text>
-            <DottedLine y={blockY + 32} />
+            <DottedLine paperLeft={paperLeft} y={blockY + 32} />
             <Scissors x={textRight - 24} y={blockY + 26} />
           </g>
         );
@@ -202,8 +195,8 @@ export default function ReceiptSVG({ data }: { data: ReceiptData }) {
         const totalsStartY = firstFilmY + films.length * PER_FILM_HEIGHT + 8;
         return (
           <>
-            <rect x={PAPER_LEFT + 4} y={totalsStartY} width={PAPER_WIDTH - 8} height={2} fill="#111" />
-            <rect x={PAPER_LEFT + 4} y={totalsStartY + 6} width={PAPER_WIDTH - 8} height={1} fill="#111" />
+            <rect x={paperLeft + 4} y={totalsStartY} width={PAPER_WIDTH - 8} height={2} fill="#111" />
+            <rect x={paperLeft + 4} y={totalsStartY + 6} width={PAPER_WIDTH - 8} height={1} fill="#111" />
             <text x={textLeft} y={totalsStartY + 18} fontFamily={FONT} fontSize={7} fill="#555">SCREENINGS</text>
             <text x={textRight} y={totalsStartY + 18} fontFamily={FONT} fontSize={8} fontWeight="bold" fill="#111" textAnchor="end">{totalScreenings}</text>
             <text x={textLeft} y={totalsStartY + 30} fontFamily={FONT} fontSize={7} fill="#555">TOTAL RUNTIME</text>
@@ -233,7 +226,7 @@ export default function ReceiptSVG({ data }: { data: ReceiptData }) {
               return <rect key={i} x={x} y={barcodeY} width={w} height={20} fill="#111" />;
             })}
             <text x={centerX} y={barcodeCodeY} fontFamily={FONT} fontSize={6} fill="#bbb" textAnchor="middle" letterSpacing={1}>Z1GGY-{yyyymmdd}-{receiptNumber}</text>
-            <SeparatorDashes y={footerSepY} />
+            <SeparatorDashes paperLeft={paperLeft} y={footerSepY} />
             <text x={centerX} y={footer1Y} fontFamily={FONT} fontSize={8} fill="#888" textAnchor="middle">WHEN YOU&apos;RE FREE —</text>
             <text x={centerX} y={footer1Y + 12} fontFamily={FONT} fontSize={8} fill="#888" textAnchor="middle">SHOW UP.</text>
             <PigeonFeet x={centerX - 10} y={feetY} />

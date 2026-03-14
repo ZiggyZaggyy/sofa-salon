@@ -2,6 +2,11 @@
 
 import { useCallback, useState } from 'react';
 
+function isMobileExport(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth < 768 || /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent);
+}
+
 export default function ReceiptExportButton() {
   const [generating, setGenerating] = useState(false);
 
@@ -15,8 +20,30 @@ export default function ReceiptExportButton() {
         pixelRatio: 3,
         backgroundColor: '#0f0f0f',
       });
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const fileName = `ziggy-receipt-${new Date().toISOString().slice(0, 10)}.png`;
+      const file = new File([blob], fileName, { type: 'image/png' });
+
+      if (isMobileExport() && typeof navigator !== 'undefined' && navigator.share) {
+        try {
+          if (navigator.canShare?.({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'Ziggy receipt',
+            });
+            return;
+          }
+        } catch {
+          // User cancelled or share failed; fall through to fallback
+        }
+        // Fallback: open image in new tab so user can long-press to save
+        window.open(dataUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
       const link = document.createElement('a');
-      link.download = `ziggy-receipt-${Date.now()}.png`;
+      link.download = fileName;
       link.href = dataUrl;
       link.click();
     } finally {
