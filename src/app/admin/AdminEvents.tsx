@@ -46,8 +46,9 @@ export default function AdminEvents({ screenings }: Props) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteAffectedCount, setDeleteAffectedCount] = useState<number | null>(null);
+  const [deleteIsPast, setDeleteIsPast] = useState(false);
 
-  const requestDelete = async (screeningId: string) => {
+  const requestDelete = async (screeningId: string, isPastEvent: boolean) => {
     setDeleteLoading(true);
     const res = await fetch(`/api/screening/${screeningId}`, {
       method: 'DELETE',
@@ -62,6 +63,7 @@ export default function AdminEvents({ screenings }: Props) {
     if (data.hasRegistrations === true) {
       setDeleteScreeningId(screeningId);
       setDeleteAffectedCount(data.count ?? 0);
+      setDeleteIsPast(isPastEvent || data.isPastScreening === true);
       setDeleteConfirmOpen(true);
       return;
     }
@@ -79,6 +81,7 @@ export default function AdminEvents({ screenings }: Props) {
     setDeleteLoading(false);
     setDeleteConfirmOpen(false);
     setDeleteScreeningId(null);
+    setDeleteIsPast(false);
     if (!res.ok) return;
     router.refresh();
   };
@@ -150,17 +153,15 @@ export default function AdminEvents({ screenings }: Props) {
           >
             {t.admin.viewSeatMap}
           </Link>
-          {!isPast && (
-            <button
-              type="button"
-              onClick={() => requestDelete(s.id)}
-              disabled={deleteLoading}
-              className="font-mono text-[10px] tracking-[0.2em] uppercase px-3 py-2 border border-[#f87171] text-[#f87171] hover:bg-[#f87171]/10 disabled:opacity-50 transition-opacity"
-              style={{ borderRadius: 0 }}
-            >
-              {deleteLoading ? '…' : t.admin.deleteEvent}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => requestDelete(s.id, isPast)}
+            disabled={deleteLoading}
+            className="font-mono text-[10px] tracking-[0.2em] uppercase px-3 py-2 border border-[#f87171] text-[#f87171] hover:bg-[#f87171]/10 disabled:opacity-50 transition-opacity"
+            style={{ borderRadius: 0 }}
+          >
+            {deleteLoading ? '…' : t.admin.deleteEvent}
+          </button>
           {!isPast && isManual && (
                 <button
                   type="button"
@@ -250,17 +251,24 @@ export default function AdminEvents({ screenings }: Props) {
               {t.admin.deleteEvent}
             </h2>
             <p className="font-mono text-[12px] text-[#e8e4dc] mb-4">
-              {t.admin.deleteEventConfirmMessage}
+              {deleteIsPast ? t.admin.deletePastEventConfirmMessage : t.admin.deleteEventConfirmMessage}
               {deleteAffectedCount != null && deleteAffectedCount > 0 && (
                 <span className="block mt-2 text-[#888]">
-                  {t.admin.deleteEventNotifyCount.replace('{n}', String(deleteAffectedCount))}
+                  {(deleteIsPast ? t.admin.deletePastEventNotifyCount : t.admin.deleteEventNotifyCount).replace(
+                    '{n}',
+                    String(deleteAffectedCount)
+                  )}
                 </span>
               )}
             </p>
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => { setDeleteConfirmOpen(false); setDeleteScreeningId(null); }}
+                onClick={() => {
+                  setDeleteConfirmOpen(false);
+                  setDeleteScreeningId(null);
+                  setDeleteIsPast(false);
+                }}
                 disabled={deleteLoading}
                 className="flex-1 border border-[#2a2a2a] text-[#888] font-mono text-[10px] tracking-[0.2em] uppercase py-3 hover:border-[#e8c84a] hover:text-[#e8c84a] transition-colors"
                 style={{ borderRadius: 0 }}
@@ -274,7 +282,11 @@ export default function AdminEvents({ screenings }: Props) {
                 className="flex-1 border border-[#f87171] text-[#f87171] font-mono text-[10px] tracking-[0.2em] uppercase py-3 hover:bg-[#f87171]/10 transition-colors disabled:opacity-50"
                 style={{ borderRadius: 0 }}
               >
-                {deleteLoading ? '…' : t.admin.deleteEventConfirmButton}
+                {deleteLoading
+                  ? '…'
+                  : deleteIsPast
+                    ? t.admin.deletePastEventConfirmButton
+                    : t.admin.deleteEventConfirmButton}
               </button>
             </div>
           </div>

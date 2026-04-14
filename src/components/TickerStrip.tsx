@@ -1,17 +1,23 @@
 'use client';
 
 import type { Locale } from '@/lib/i18n';
+import { useLocale } from '@/components/LocaleProvider';
+import { screeningDisplayTitle } from '@/lib/screening-display';
+import { starsFromAvg } from '@/lib/ticker-utils';
 
 export type TickerSegmentItem =
   | string
-  | { type: 'event'; screening_at: string; title: string };
+  | { type: 'event'; screening_at: string; title: string; title_en?: string | null }
+  | { type: 'past_thanks'; title: string; title_en?: string | null }
+  | { type: 'rating_row'; title: string; title_en?: string | null; avg: number };
 
 /** Format event segment(s) in the viewer's local time (runs in browser = correct timezone). */
 function formatEventSegmentStrings(
-  item: { type: 'event'; screening_at: string; title: string },
+  item: { type: 'event'; screening_at: string; title: string; title_en?: string | null },
   locale: Locale
 ): string[] {
-  const { screening_at, title } = item;
+  const { screening_at, title, title_en } = item;
+  const displayTitle = screeningDisplayTitle(locale, title, title_en);
   const date = new Date(screening_at);
   const timeStr = date.toLocaleTimeString('en-GB', {
     hour: '2-digit',
@@ -40,27 +46,45 @@ function formatEventSegmentStrings(
   const segments: string[] = [];
   if (diffHours < 3) {
     segments.push(
-      isZh ? `今晚 · ${timeStr} · ${title}` : `TONIGHT · ${timeStr} · ${title}`
+      isZh ? `今晚 · ${timeStr} · ${displayTitle}` : `TONIGHT · ${timeStr} · ${displayTitle}`
     );
-    segments.push(isZh ? `即将开始 · ${title}` : `STARTING SOON · ${title}`);
+    segments.push(isZh ? `即将开始 · ${displayTitle}` : `STARTING SOON · ${displayTitle}`);
   } else if (diffHours < 8) {
     segments.push(
-      isZh ? `今天 · ${timeStr} · ${title}` : `TODAY · ${timeStr} · ${title}`
+      isZh ? `今天 · ${timeStr} · ${displayTitle}` : `TODAY · ${timeStr} · ${displayTitle}`
     );
   } else if (diffDays < 2) {
     segments.push(
-      isZh ? `明天 · ${timeStr} · ${title}` : `TOMORROW · ${timeStr} · ${title}`
+      isZh ? `明天 · ${timeStr} · ${displayTitle}` : `TOMORROW · ${timeStr} · ${displayTitle}`
     );
   } else if (diffDays < 7) {
     segments.push(
-      isZh ? `即将放映 · ${dateStr} · ${title}` : `UPCOMING · ${dateStr} · ${title}`
+      isZh ? `即将放映 · ${dateStr} · ${displayTitle}` : `UPCOMING · ${dateStr} · ${displayTitle}`
     );
   } else {
     segments.push(
-      isZh ? `敬请期待 · ${dateStr} · ${title}` : `COMING SOON · ${dateStr} · ${title}`
+      isZh ? `敬请期待 · ${dateStr} · ${displayTitle}` : `COMING SOON · ${dateStr} · ${displayTitle}`
     );
   }
   return segments;
+}
+
+function pastThanksStrings(
+  item: { type: 'past_thanks'; title: string; title_en?: string | null },
+  locale: Locale
+): string[] {
+  const displayTitle = screeningDisplayTitle(locale, item.title, item.title_en);
+  if (!displayTitle) return [];
+  const isZh = locale === 'zh';
+  return [isZh ? `谢谢大家观看《${displayTitle}》` : `Thank you for watching ${displayTitle}`];
+}
+
+function ratingRowString(
+  item: { type: 'rating_row'; title: string; title_en?: string | null; avg: number },
+  locale: Locale
+): string {
+  const displayTitle = screeningDisplayTitle(locale, item.title, item.title_en);
+  return `${displayTitle} ${starsFromAvg(item.avg)} ${item.avg.toFixed(1)}`;
 }
 
 function expandSegments(
@@ -71,8 +95,12 @@ function expandSegments(
   for (const item of items) {
     if (typeof item === 'string') {
       out.push(item);
-    } else {
+    } else if (item.type === 'event') {
       out.push(...formatEventSegmentStrings(item, locale));
+    } else if (item.type === 'past_thanks') {
+      out.push(...pastThanksStrings(item, locale));
+    } else if (item.type === 'rating_row') {
+      out.push(ratingRowString(item, locale));
     }
   }
   return out;
@@ -80,15 +108,17 @@ function expandSegments(
 
 interface Props {
   segmentItems: TickerSegmentItem[];
-  locale: Locale;
-  fallback: string[];
+  fallbackEn: string[];
+  fallbackZh: string[];
 }
 
 export default function TickerStrip({
   segmentItems,
-  locale,
-  fallback,
+  fallbackEn,
+  fallbackZh,
 }: Props) {
+  const { locale } = useLocale();
+  const fallback = locale === 'zh' ? fallbackZh : fallbackEn;
   const allSegments =
     segmentItems.length > 0
       ? expandSegments(segmentItems, locale)

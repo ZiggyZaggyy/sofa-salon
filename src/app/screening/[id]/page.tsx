@@ -3,12 +3,18 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { notFound } from 'next/navigation';
 import { getT, type Locale } from '@/lib/i18n';
+import { fetchScreeningAltLocaleByIds } from '@/lib/screening-alt-locale-fetch';
+import { fetchScreeningDetailRow } from '@/lib/fetch-screening-detail-row';
 import BackButton from '@/components/BackButton';
 import SeatMap from '@/components/SeatMap';
 import GhostSeatManager from '@/components/GhostSeatManager';
 import AttendanceManager from '@/components/AttendanceManager';
 import ScreeningRedirect from '@/components/ScreeningRedirect';
 import ScreeningSeatMapWrapper from './ScreeningSeatMapWrapper';
+import ScreeningFilmHeading from './ScreeningFilmHeading';
+import ScreeningFilmDetails from './ScreeningFilmDetails';
+
+export const dynamic = 'force-dynamic';
 
 export default async function ScreeningPage({
   params,
@@ -25,30 +31,14 @@ export default async function ScreeningPage({
   const t = getT(locale);
 
   const [{ data: screening }, { data: { user } }] = await Promise.all([
-    supabase
-      .from('screenings')
-      .select(`
-        id,
-        title,
-        screening_at,
-        squeeze_note,
-        waitlist_mode,
-        room_id,
-        rooms (
-          name,
-          furniture_json,
-          decorations_json,
-          canvas_w,
-          canvas_h,
-          room_background_id
-        )
-      `)
-      .eq('id', id)
-      .single(),
+    fetchScreeningDetailRow(supabase, id),
     supabase.auth.getUser(),
   ]);
 
   if (!screening) notFound();
+  const altLocaleById = await fetchScreeningAltLocaleByIds(supabase, [id]);
+  const altRow = altLocaleById[id];
+  const links = screening as { douban_url?: string | null; letterboxd_url?: string | null };
   const roomsRaw = screening.rooms;
   const roomData = Array.isArray(roomsRaw) ? roomsRaw[0] : roomsRaw;
   if (!roomData) {
@@ -126,6 +116,14 @@ export default async function ScreeningPage({
   });
 
   const isPast = new Date(screening.screening_at).getTime() < Date.now();
+  const base = screening as {
+    title: string;
+    description?: string | null;
+    year?: number | null;
+    director?: string | null;
+    duration_minutes?: number | null;
+  };
+  const filmDescription = (base.description ?? '').trim();
   const userHasReservation =
     user &&
     (reservations as { user_id?: string }[]).some((r) => r.user_id === user.id);
@@ -136,9 +134,24 @@ export default async function ScreeningPage({
       <BackButton className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a] mb-4 inline-block transition-colors">
         {t.screening.back}
       </BackButton>
-      <h1 className="font-pixel-cjk text-lg md:text-xl text-[#e8c84a] mb-0.5">
-        {screening.title}
-      </h1>
+      <ScreeningFilmHeading
+        title={base.title}
+        titleEn={altRow?.title_en ?? null}
+        year={base.year}
+        director={base.director}
+        directorEn={altRow?.director_en ?? null}
+        durationMinutes={base.duration_minutes}
+      />
+      <ScreeningFilmDetails
+        description={filmDescription}
+        doubanUrl={links.douban_url ?? ''}
+        letterboxdUrl={links.letterboxd_url ?? ''}
+        labels={{
+          filmNotes: t.screening.filmNotes,
+          linkDouban: t.screening.linkDouban,
+          linkLetterboxd: t.screening.linkLetterboxd,
+        }}
+      />
       <p className="font-pixel-cjk text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-6">
         {room.name} · {dateStr} · {isAdmin ? t.screening.adminViewSeatMapHint : t.screening.tapToClaim}
       </p>
@@ -179,7 +192,8 @@ export default async function ScreeningPage({
       <div className="border border-[#e8c84a] bg-[#0f0f0f] p-4 md:p-6" style={{ borderRadius: 0 }}>
         <ScreeningSeatMapWrapper
           screeningId={screening.id}
-          screeningTitle={screening.title}
+          filmTitle={base.title}
+          filmTitleEn={altRow?.title_en ?? null}
           room={{
             furniture: furniture as Parameters<typeof SeatMap>[0]['room']['furniture'],
             decorations: decorations as Parameters<typeof SeatMap>[0]['room']['decorations'],

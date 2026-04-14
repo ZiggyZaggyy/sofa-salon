@@ -1,17 +1,24 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocale } from '@/components/LocaleProvider';
 import ScreeningCard from '@/components/ScreeningCard';
+import ScreeningExternalLinksRow from '@/components/ScreeningExternalLinksRow';
 import SeatMapInline from '@/components/SeatMapInline';
+import { safeHttpUrl } from '@/lib/safe-http-url';
 
 interface Screening {
   id: string;
   title: string;
+  title_en?: string;
   screening_at: string;
   description?: string;
+  douban_url?: string;
+  letterboxd_url?: string;
   room_id?: string;
   year?: number;
   director?: string;
+  director_en?: string;
   duration_minutes?: number;
   reservedCount: number;
   totalSeats?: number;
@@ -28,6 +35,7 @@ const CARD_HEIGHT = 200;
 const MOBILE_BREAKPOINT = 768;
 
 export default function HomeContent({ screenings, openId }: Props) {
+  const { t } = useLocale();
   const [selectedId, setSelectedId] = useState<string | null>(openId);
   const [isMobile, setIsMobile] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -82,6 +90,11 @@ export default function HomeContent({ screenings, openId }: Props) {
 
   const selectedScreening = screenings.find((s) => s.id === selectedId);
   const showNavButtons = isMobile && screenings.length > 1;
+  const selectedHasFilmNotes = Boolean(selectedScreening?.description?.trim());
+  const selectedHasExternalLinks = Boolean(
+    selectedScreening &&
+      (safeHttpUrl(selectedScreening.douban_url) || safeHttpUrl(selectedScreening.letterboxd_url))
+  );
 
   return (
     <div style={{ width: '90vw', maxWidth: 1100, margin: '0 auto' }}>
@@ -117,11 +130,13 @@ export default function HomeContent({ screenings, openId }: Props) {
                 screening={{
                   id: s.id,
                   title: s.title,
+                  title_en: s.title_en,
                   screening_at: s.screening_at,
                   description: s.description,
                   room_id: s.room_id,
                   year: s.year,
                   director: s.director,
+                  director_en: s.director_en,
                   duration_minutes: s.duration_minutes,
                 }}
                 reservedCount={s.reservedCount}
@@ -197,6 +212,54 @@ export default function HomeContent({ screenings, openId }: Props) {
           </>
         )}
       </div>
+
+      {selectedScreening && (selectedHasFilmNotes || selectedHasExternalLinks) ? (
+        <section
+          style={{
+            width: '100%',
+            maxWidth: 1100,
+            margin: '0 auto 20px',
+            padding: '16px 20px',
+            boxSizing: 'border-box',
+          }}
+        >
+          {selectedHasFilmNotes ? (
+            <>
+              <h2
+                className="font-mono"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  color: '#888',
+                  marginBottom: 10,
+                }}
+              >
+                {t.screening.filmNotes}
+              </h2>
+              <p
+                className="font-mono whitespace-pre-wrap"
+                style={{
+                  fontSize: 13,
+                  lineHeight: 1.55,
+                  color: '#c8c4bc',
+                  margin: 0,
+                }}
+              >
+                {(selectedScreening.description ?? '').trim()}
+              </p>
+            </>
+          ) : null}
+          {selectedHasExternalLinks ? (
+            <ScreeningExternalLinksRow
+              doubanUrl={selectedScreening.douban_url}
+              letterboxdUrl={selectedScreening.letterboxd_url}
+              labels={{ linkDouban: t.screening.linkDouban, linkLetterboxd: t.screening.linkLetterboxd }}
+              className={selectedHasFilmNotes ? 'mt-3' : ''}
+            />
+          ) : null}
+        </section>
+      ) : null}
 
       {/* Seat map: full width below carousel, not inside any card */}
       <section

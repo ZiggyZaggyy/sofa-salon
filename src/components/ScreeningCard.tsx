@@ -1,15 +1,18 @@
 'use client';
 
 import { useLocale } from '@/components/LocaleProvider';
+import { screeningDisplayDirector, screeningDisplayTitle } from '@/lib/screening-display';
 
 interface Screening {
   id: string;
   title: string;
+  title_en?: string;
   screening_at: string;
   description?: string;
   room_id?: string;
   year?: number;
   director?: string;
+  director_en?: string;
   duration_minutes?: number;
 }
 
@@ -32,7 +35,9 @@ export default function ScreeningCard({
   cardWidth = 280,
   cardHeight = 200,
 }: Props) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const displayTitle = screeningDisplayTitle(locale, screening.title, screening.title_en);
+  const displayDirector = screeningDisplayDirector(locale, screening.director, screening.director_en);
   const date = new Date(screening.screening_at);
   const dateStr = date.toLocaleDateString('en-GB', {
     weekday: 'short',
@@ -49,7 +54,7 @@ export default function ScreeningCard({
 
   const metaParts = [
     screening.year,
-    screening.director,
+    displayDirector || null,
     screening.duration_minutes ? `${screening.duration_minutes} min` : null,
   ].filter(Boolean);
 
@@ -114,8 +119,8 @@ export default function ScreeningCard({
           flexDirection: 'column',
         }}
       >
-        <div className="film-title truncate" title={screening.title}>
-          {screening.title}
+        <div className="film-title truncate" title={displayTitle}>
+          {displayTitle}
         </div>
         {metaParts.length > 0 && (
           <div className="film-meta truncate" title={metaParts.join(' · ')}>

@@ -2,6 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import SeatMap from '@/components/SeatMap';
+import { useLocale } from '@/components/LocaleProvider';
+import { screeningDisplayTitle } from '@/lib/screening-display';
 
 interface Reservation {
   id: string;
@@ -27,7 +29,8 @@ type SeatMapRoom = Parameters<typeof SeatMap>[0]['room'];
 
 interface Props {
   screeningId: string;
-  screeningTitle: string;
+  filmTitle: string;
+  filmTitleEn?: string | null;
   room: SeatMapRoom;
   squeezeNote: string | null;
   initialReservations: Reservation[];
@@ -39,11 +42,18 @@ interface Props {
   testSqueeze?: boolean;
 }
 
-export default function ScreeningSeatMapWrapper(props: Props) {
+export default function ScreeningSeatMapWrapper({
+  filmTitle,
+  filmTitleEn,
+  ...rest
+}: Props) {
   const router = useRouter();
+  const { locale } = useLocale();
+  const screeningTitle = screeningDisplayTitle(locale, filmTitle, filmTitleEn);
   return (
     <SeatMap
-      {...props}
+      {...rest}
+      screeningTitle={screeningTitle}
       onReservationsChange={() => router.refresh()}
     />
   );

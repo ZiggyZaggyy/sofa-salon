@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useLocale } from '@/components/LocaleProvider';
+import { screeningDisplayTitle } from '@/lib/screening-display';
 import type { FurniturePiece, Decoration } from '@/lib/furniture';
 import SeatMap from '@/components/SeatMap';
 
@@ -12,7 +13,7 @@ interface Props {
 }
 
 export default function SeatMapInline({ screeningId, roomId }: Props) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [refreshKey, setRefreshKey] = useState(0);
   const [data, setData] = useState<{
     room: { furniture: FurniturePiece[]; decorations: Decoration[]; canvasW: number; canvasH: number } | null;
@@ -22,7 +23,8 @@ export default function SeatMapInline({ screeningId, roomId }: Props) {
     profile: { wechat_id: string | null; is_admin?: boolean; no_show_count?: number } | null;
     squeezeNote: string | null;
     waitlistMode: 'auto' | 'manual';
-    screeningTitle: string;
+    filmTitle: string;
+    filmTitleEn: string | null;
   } | null>(null);
 
   useEffect(() => {
@@ -44,13 +46,16 @@ export default function SeatMapInline({ screeningId, roomId }: Props) {
           profile,
           squeezeNote: null,
           waitlistMode: 'auto',
-          screeningTitle: '',
+          filmTitle: '',
+          filmTitleEn: null,
         });
         return;
       }
 
       const payload = await seatmapRes.json();
       const room = payload.room as { furniture: FurniturePiece[]; decorations: Decoration[]; canvasW: number; canvasH: number } | null;
+      const filmTitle = (payload.filmTitle as string | undefined) ?? (payload.screeningTitle as string | undefined) ?? '';
+      const filmTitleEn = (payload.filmTitleEn as string | null | undefined) ?? null;
       setData({
         room,
         reservations: payload.reservations ?? [],
@@ -59,7 +64,8 @@ export default function SeatMapInline({ screeningId, roomId }: Props) {
         profile: profile ?? null,
         squeezeNote: payload.squeezeNote ?? null,
         waitlistMode: (payload.waitlistMode as 'auto' | 'manual') ?? 'auto',
-        screeningTitle: payload.screeningTitle ?? '',
+        filmTitle,
+        filmTitleEn,
       });
     }
     load();
@@ -113,10 +119,12 @@ export default function SeatMapInline({ screeningId, roomId }: Props) {
     );
   }
 
+  const screeningTitle = screeningDisplayTitle(locale, data.filmTitle, data.filmTitleEn);
+
   return (
     <SeatMap
       screeningId={screeningId}
-      screeningTitle={data.screeningTitle}
+      screeningTitle={screeningTitle}
       room={data.room}
       squeezeNote={data.squeezeNote}
       initialReservations={data.reservations as Parameters<typeof SeatMap>[0]['initialReservations']}
