@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { getT, type Locale } from '@/lib/i18n';
+import { fetchScreeningAltLocaleByIds } from '@/lib/screening-alt-locale-fetch';
 import EditScreeningForm from './EditScreeningForm';
 
 export default async function EditScreeningPage({
@@ -33,11 +34,16 @@ export default async function EditScreeningPage({
 
   const { data: screening } = await supabase
     .from('screenings')
-    .select('id, title, description, screening_at, room_id, squeeze_note, waitlist_mode, is_active, year, director, duration_minutes')
+    .select(
+      'id, title, description, screening_at, room_id, squeeze_note, waitlist_mode, is_active, year, director, duration_minutes, douban_url, letterboxd_url'
+    )
     .eq('id', id)
     .single();
 
   if (!screening) notFound();
+
+  const altLocaleById = await fetchScreeningAltLocaleByIds(supabase, [id]);
+  const alt = altLocaleById[id];
 
   const isPast = new Date(screening.screening_at ?? '') < new Date();
 
@@ -53,6 +59,8 @@ export default async function EditScreeningPage({
           id: screening.id,
           title: screening.title ?? '',
           description: screening.description ?? '',
+          douban_url: (screening as { douban_url?: string | null }).douban_url ?? '',
+          letterboxd_url: (screening as { letterboxd_url?: string | null }).letterboxd_url ?? '',
           screening_at: screening.screening_at ?? '',
           room_id: screening.room_id ?? '',
           squeeze_note: screening.squeeze_note ?? '',
@@ -61,6 +69,8 @@ export default async function EditScreeningPage({
           year: (screening as { year?: number | null }).year ?? undefined,
           director: (screening as { director?: string | null }).director ?? undefined,
           duration_minutes: (screening as { duration_minutes?: number | null }).duration_minutes ?? undefined,
+          title_en: alt?.title_en ?? undefined,
+          director_en: alt?.director_en ?? undefined,
         }}
         rooms={rooms ?? []}
         isPast={isPast}

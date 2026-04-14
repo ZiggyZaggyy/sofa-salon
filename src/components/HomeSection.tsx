@@ -6,11 +6,15 @@ import HomeContent from '@/components/HomeContent';
 interface Screening {
   id: string;
   title: string;
+  title_en?: string;
   screening_at: string;
   description?: string;
+  douban_url?: string;
+  letterboxd_url?: string;
   room_id?: string;
   year?: number;
   director?: string;
+  director_en?: string;
   duration_minutes?: number;
   reservedCount: number;
   totalSeats?: number;

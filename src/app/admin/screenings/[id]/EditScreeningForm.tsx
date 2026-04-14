@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import BackButton from '@/components/BackButton';
 import { useLocale } from '@/components/LocaleProvider';
+import { ALT_LOCALE_MIGRATION_ERROR_KEY } from '@/lib/screening-alt-locale-schema';
 
 interface Room {
   id: string;
@@ -14,6 +15,8 @@ interface ScreeningFormData {
   id: string;
   title: string;
   description: string;
+  douban_url: string;
+  letterboxd_url: string;
   screening_at: string;
   room_id: string;
   squeeze_note: string;
@@ -22,12 +25,14 @@ interface ScreeningFormData {
   year?: number;
   director?: string;
   duration_minutes?: number;
+  title_en?: string;
+  director_en?: string;
 }
 
 interface Props {
   screening: ScreeningFormData;
   rooms: Room[];
-  /** When true, only film details (director, duration, description, year) are editable; title and screening_at are locked. */
+  /** When true, only film details (director, duration, description, links, year) are editable; title and screening_at are locked. */
   isPast?: boolean;
 }
 
@@ -44,14 +49,19 @@ function toLocalDatetimeLocal(iso: string): string {
 
 export default function EditScreeningForm({ screening, rooms, isPast = false }: Props) {
   const router = useRouter();
+  const { t } = useLocale();
   const [title, setTitle] = useState(screening.title);
-  const [description, setDescription] = useState(screening.description);
+  const [description, setDescription] = useState(screening.description ?? '');
+  const [doubanUrl, setDoubanUrl] = useState(screening.douban_url ?? '');
+  const [letterboxdUrl, setLetterboxdUrl] = useState(screening.letterboxd_url ?? '');
   const [screeningAt, setScreeningAt] = useState(toLocalDatetimeLocal(screening.screening_at));
   const [roomId, setRoomId] = useState(screening.room_id);
   const [waitlistMode, setWaitlistMode] = useState<'auto' | 'manual'>(screening.waitlist_mode);
   const [isActive, setIsActive] = useState(screening.is_active);
   const [year, setYear] = useState(screening.year != null ? String(screening.year) : '');
   const [director, setDirector] = useState(screening.director ?? '');
+  const [titleEn, setTitleEn] = useState(screening.title_en ?? '');
+  const [directorEn, setDirectorEn] = useState(screening.director_en ?? '');
   const [durationMinutes, setDurationMinutes] = useState(
     screening.duration_minutes != null ? String(screening.duration_minutes) : ''
   );
@@ -66,24 +76,34 @@ export default function EditScreeningForm({ screening, rooms, isPast = false }: 
       ? {
           title: screening.title,
           description,
+          douban_url: doubanUrl.trim(),
+          letterboxd_url: letterboxdUrl.trim(),
           screening_at: screening.screening_at,
           room_id: screening.room_id || null,
+          squeeze_note: screening.squeeze_note ?? '',
           waitlist_mode: screening.waitlist_mode,
           is_active: screening.is_active,
           year: year ? parseInt(year, 10) : null,
           director: director || null,
           duration_minutes: durationMinutes ? parseInt(durationMinutes, 10) : null,
+          title_en: titleEn.trim() || null,
+          director_en: directorEn.trim() || null,
         }
       : {
           title,
           description,
+          douban_url: doubanUrl.trim(),
+          letterboxd_url: letterboxdUrl.trim(),
           screening_at: new Date(screeningAt).toISOString(),
           room_id: roomId || null,
+          squeeze_note: screening.squeeze_note ?? '',
           waitlist_mode: waitlistMode,
           is_active: isActive,
           year: year ? parseInt(year, 10) : null,
           director: director || null,
           duration_minutes: durationMinutes ? parseInt(durationMinutes, 10) : null,
+          title_en: titleEn.trim() || null,
+          director_en: directorEn.trim() || null,
         };
     const res = await fetch(`/api/screening/${screening.id}`, {
       method: 'PATCH',
@@ -93,14 +113,17 @@ export default function EditScreeningForm({ screening, rooms, isPast = false }: 
     const data = await res.json();
     setLoading(false);
     if (!res.ok) {
-      setError(data.error ?? 'Update failed');
+      setError(
+        data.errorKey === ALT_LOCALE_MIGRATION_ERROR_KEY
+          ? t.admin.altLocaleMigrationRequired
+          : (data.error ?? 'Update failed')
+      );
       return;
     }
     router.push('/admin');
     router.refresh();
   };
 
-  const { t } = useLocale();
   return (
     <>
       <BackButton className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] hover:text-[#e8c84a] mb-6 inline-block transition-colors">
@@ -185,6 +208,34 @@ export default function EditScreeningForm({ screening, rooms, isPast = false }: 
         </div>
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
+            {t.admin.altLanguageTitle}
+          </label>
+          <input
+            type="text"
+            value={titleEn}
+            onChange={(e) => setTitleEn(e.target.value)}
+            className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
+            placeholder="e.g. Chungking Express"
+            style={{ borderRadius: 0 }}
+          />
+          <p className="font-mono text-[11px] text-[#555] mt-1.5">{t.admin.altLanguageTitleHint}</p>
+        </div>
+        <div>
+          <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
+            {t.admin.altLanguageDirector}
+          </label>
+          <input
+            type="text"
+            value={directorEn}
+            onChange={(e) => setDirectorEn(e.target.value)}
+            className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
+            placeholder="e.g. Wong Kar-wai"
+            style={{ borderRadius: 0 }}
+          />
+          <p className="font-mono text-[11px] text-[#555] mt-1.5">{t.admin.altLanguageDirectorHint}</p>
+        </div>
+        <div>
+          <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
             Duration in minutes (optional)
           </label>
           <input
@@ -208,6 +259,34 @@ export default function EditScreeningForm({ screening, rooms, isPast = false }: 
             placeholder="Film details, notes..."
             style={{ borderRadius: 0 }}
           />
+        </div>
+        <div>
+          <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
+            {t.admin.screeningDoubanUrl}
+          </label>
+          <input
+            type="text"
+            value={doubanUrl}
+            onChange={(e) => setDoubanUrl(e.target.value)}
+            className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
+            placeholder="https://movie.douban.com/subject/…"
+            style={{ borderRadius: 0 }}
+          />
+          <p className="font-mono text-[11px] text-[#555] mt-1.5">{t.admin.screeningDoubanUrlHint}</p>
+        </div>
+        <div>
+          <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
+            {t.admin.screeningLetterboxdUrl}
+          </label>
+          <input
+            type="text"
+            value={letterboxdUrl}
+            onChange={(e) => setLetterboxdUrl(e.target.value)}
+            className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
+            placeholder="https://letterboxd.com/film/…"
+            style={{ borderRadius: 0 }}
+          />
+          <p className="font-mono text-[11px] text-[#555] mt-1.5">{t.admin.screeningLetterboxdUrlHint}</p>
         </div>
         {!isPast && (
           <>

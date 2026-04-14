@@ -1,8 +1,9 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { APP_NAME_PARTS } from '@/lib/config';
-import { RECENT_RATINGS_SCREENING_LIMIT, starsFromAvg } from '@/lib/ticker-utils';
+import { RECENT_RATINGS_SCREENING_LIMIT } from '@/lib/ticker-utils';
 import type { Locale } from '@/lib/i18n';
+import { fetchScreeningAltLocaleByIds } from '@/lib/screening-alt-locale-fetch';
 import TickerStrip, { type TickerSegmentItem } from '@/components/TickerStrip';
 
 const COOKIE_NAME = 'sofa-salon-locale';
@@ -21,20 +22,16 @@ const FALLBACK_STATIC_ZH = [
   '不见不散',
 ];
 
-/** Event segments are built on the client so time uses the viewer's timezone (fixes deploy/server UTC). */
-function buildEventSegmentItems(screenings: { screening_at: string; title: string }[]): TickerSegmentItem[] {
+/** Raw titles; English display is resolved in {@link TickerStrip} from {@link useLocale}. */
+function buildEventSegmentItems(
+  screenings: { screening_at: string; title: string; title_en?: string | null }[]
+): TickerSegmentItem[] {
   return screenings.map((s) => ({
     type: 'event' as const,
     screening_at: s.screening_at,
     title: s.title,
+    title_en: s.title_en ?? null,
   }));
-}
-
-/** One segment for the most recent past screening, e.g. "谢谢大家观看《少年派》". */
-function buildPastThankYouSegment(pastScreening: { title: string } | null, locale: Locale): string[] {
-  if (!pastScreening?.title) return [];
-  const isZh = locale === 'zh';
-  return [isZh ? `谢谢大家观看《${pastScreening.title}》` : `Thank you for watching ${pastScreening.title}`];
 }
 
 export default async function Ticker() {
@@ -49,10 +46,10 @@ export default async function Ticker() {
   const [configRows, customRows, screeningsRes, ratingsRes, userMessagesRes, pastScreeningRes, systemEventsRes] = await Promise.all([
     supabase.from('ticker_config').select('key, value'),
     supabase.from('ticker_custom').select('content, created_by').eq('is_active', true).order('sort_order', { ascending: true }),
-    supabase.from('screenings').select('title, screening_at').eq('is_active', true).gte('screening_at', nowIso).order('screening_at', { ascending: true }).limit(5),
+    supabase.from('screenings').select('id, title, screening_at').eq('is_active', true).gte('screening_at', nowIso).order('screening_at', { ascending: true }).limit(5),
     supabase.from('screenings').select('id, title').lt('screening_at', nowIso).order('screening_at', { ascending: false }).limit(RECENT_RATINGS_SCREENING_LIMIT),
     supabase.from('ticker_user_messages').select('content, user_id').eq('is_active', true).order('created_at', { ascending: true }),
-    supabase.from('screenings').select('title').eq('is_active', true).lt('screening_at', nowIso).order('screening_at', { ascending: false }).limit(1).maybeSingle(),
+    supabase.from('screenings').select('id, title').eq('is_active', true).lt('screening_at', nowIso).order('screening_at', { ascending: false }).limit(1).maybeSingle(),
     supabase.from('ticker_system_events').select('type, title').gt('expires_at', nowIso).order('created_at', { ascending: false }),
   ]);
 
@@ -88,16 +85,39 @@ export default async function Ticker() {
     })
     .filter(Boolean);
 
-  const fallback = locale === 'zh' ? FALLBACK_STATIC_ZH : FALLBACK_STATIC_EN;
-  const baseSegments = customSegments.length > 0 ? customSegments : fallback;
+  const baseSegments: string[] = customSegments.length > 0 ? customSegments : [];
 
-  const screenings = (screeningsRes.data ?? []) as { screening_at: string; title: string }[];
-  const eventSegmentItems = showUpcoming ? buildEventSegmentItems(screenings) : [];
-  const pastThankYouSegments = showPastEventThankYou ? buildPastThankYouSegment(pastScreeningRes.data as { title: string } | null, locale) : [];
+  const upcomingRows = (screeningsRes.data ?? []) as { id: string; screening_at: string; title: string }[];
+  const ratingsRows = (ratingsRes.data ?? []) as { id: string; title: string }[];
+  const pastRow = pastScreeningRes.data as { id?: string; title?: string } | null;
+  const altIds = [
+    ...upcomingRows.map((r) => r.id),
+    ...ratingsRows.map((r) => r.id),
+    ...(pastRow?.id ? [pastRow.id] : []),
+  ];
+  const altLocaleById = await fetchScreeningAltLocaleByIds(supabase, altIds);
 
-  let ratingSegments: string[] = [];
-  if (showRatings && ratingsRes.data?.length) {
-    const ids = (ratingsRes.data as { id: string }[]).map((s) => s.id);
+  const screeningsRaw = upcomingRows.map((s) => ({
+    screening_at: s.screening_at,
+    title: s.title,
+    title_en: altLocaleById[s.id]?.title_en ?? null,
+  }));
+  const eventSegmentItems = showUpcoming ? buildEventSegmentItems(screeningsRaw) : [];
+  const pastForThankYou =
+    pastRow?.title != null
+      ? {
+          title: pastRow.title,
+          title_en: pastRow.id ? altLocaleById[pastRow.id]?.title_en ?? null : null,
+        }
+      : null;
+  const pastThankYouSegments: TickerSegmentItem[] =
+    showPastEventThankYou && pastForThankYou?.title
+      ? [{ type: 'past_thanks' as const, title: pastForThankYou.title, title_en: pastForThankYou.title_en }]
+      : [];
+
+  let ratingSegments: TickerSegmentItem[] = [];
+  if (showRatings && ratingsRows.length) {
+    const ids = ratingsRows.map((s) => s.id);
     const { data: agg } = await supabase
       .from('screening_ratings')
       .select('screening_id, rating')
@@ -108,13 +128,18 @@ export default async function Ticker() {
       if (!bySid[sid]) bySid[sid] = [];
       bySid[sid].push((r as { rating: number }).rating);
     }
-    const titles = new Map((ratingsRes.data as { id: string; title: string }[]).map((s) => [s.id, s.title]));
     for (const sid of ids) {
       const arr = bySid[sid] ?? [];
       if (arr.length === 0) continue;
       const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
-      const title = titles.get(sid) ?? 'Film';
-      ratingSegments.push(`${title} ${starsFromAvg(avg)} ${avg.toFixed(1)}`);
+      const row = ratingsRows.find((r) => r.id === sid);
+      if (!row) continue;
+      ratingSegments.push({
+        type: 'rating_row' as const,
+        title: row.title,
+        title_en: altLocaleById[sid]?.title_en ?? null,
+        avg,
+      });
     }
   }
 
@@ -146,7 +171,7 @@ export default async function Ticker() {
 
   /** Round-robin interleave so we avoid long runs of the same type (e.g. many "upcoming" in a row). */
   const buckets: TickerSegmentItem[][] = [
-    baseSegments,
+    ...(baseSegments.length > 0 ? [baseSegments as TickerSegmentItem[]] : []),
     eventSegmentItems,
     pastThankYouSegments,
     ratingSegments,
@@ -164,11 +189,19 @@ export default async function Ticker() {
     }
   }
 
+  const defaultMerged: TickerSegmentItem[] = [
+    ...baseSegments,
+    ...eventSegmentItems,
+    ...pastThankYouSegments,
+    ...ratingSegments,
+    ...systemEventSegments,
+  ];
+
   return (
     <TickerStrip
-      segmentItems={merged.length > 0 ? merged : [...baseSegments, ...eventSegmentItems, ...pastThankYouSegments, ...ratingSegments, ...systemEventSegments]}
-      locale={locale}
-      fallback={fallback}
+      segmentItems={merged.length > 0 ? merged : defaultMerged}
+      fallbackEn={FALLBACK_STATIC_EN}
+      fallbackZh={FALLBACK_STATIC_ZH}
     />
   );
 }

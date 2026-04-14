@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchScreeningAltLocaleByIds } from '@/lib/screening-alt-locale-fetch';
 
 /**
  * Returns seatmap data (room, reservations with profiles, waitlist).
@@ -64,6 +65,8 @@ export async function GET(
     return NextResponse.json({ error: 'Screening not found' }, { status: 404 });
   }
 
+  const altLocaleById = await fetchScreeningAltLocaleByIds(admin, [screeningId]);
+
   const r = screening.rooms;
   const roomRaw = Array.isArray(r) ? r[0] : r;
   const raw = roomRaw as {
@@ -106,11 +109,16 @@ export async function GET(
     return { ...rest, profiles: profile };
   });
 
+  const filmTitle = (screening as { title?: string }).title ?? '';
+  const filmTitleEn = altLocaleById[screeningId]?.title_en ?? null;
+
   return NextResponse.json({
     room,
     reservations: mappedReservations,
     waitlist: waitlist ?? [],
-    screeningTitle: (screening as { title?: string }).title ?? '',
+    filmTitle,
+    filmTitleEn,
+    screeningTitle: filmTitle,
     squeezeNote: (screening as { squeeze_note?: string | null }).squeeze_note ?? null,
     waitlistMode: ((screening as { waitlist_mode?: string | null }).waitlist_mode as string) ?? 'auto',
   });
