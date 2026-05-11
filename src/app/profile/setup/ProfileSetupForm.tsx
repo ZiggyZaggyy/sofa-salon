@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import AvatarRegen from '@/components/AvatarRegen';
 import { jsonToConfig, type AvatarConfig } from '@/lib/avatar';
+import { useLocale } from '@/components/LocaleProvider';
 
 interface Props {
   initialDisplayName: string;
@@ -20,6 +21,7 @@ export default function ProfileSetupForm({
   redirectTo = '/',
 }: Props) {
   const router = useRouter();
+  const { t } = useLocale();
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [wechatId, setWechatId] = useState(initialWechatId);
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(
@@ -31,7 +33,7 @@ export default function ProfileSetupForm({
   const save = async () => {
     const wechat = String(wechatId).trim();
     if (!wechat) {
-      setError('WeChat ID is required.');
+      setError(t.profile.wechatRequired);
       return;
     }
     setSaving(true);
@@ -41,7 +43,7 @@ export default function ProfileSetupForm({
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setError('Not signed in.');
+      setError(t.profile.notSignedIn);
       setSaving(false);
       return;
     }
@@ -78,7 +80,7 @@ export default function ProfileSetupForm({
           htmlFor="displayName"
           className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2"
         >
-          Display name
+          {t.profile.displayName}
         </label>
         <input
           id="displayName"
@@ -87,7 +89,7 @@ export default function ProfileSetupForm({
           onChange={(e) => setDisplayName(e.target.value)}
           className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] transition-colors placeholder:text-[#444444]"
           style={{ borderRadius: 0 }}
-          placeholder="Your name"
+          placeholder={t.profile.displayNamePlaceholder}
         />
       </div>
       <div>
@@ -95,7 +97,7 @@ export default function ProfileSetupForm({
           htmlFor="wechatId"
           className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2"
         >
-          WeChat ID / 微信号 <span className="text-[#f87171]">*</span>
+          {t.profile.wechatId} <span className="text-[#f87171]">*</span>
         </label>
         <input
           id="wechatId"
@@ -104,7 +106,7 @@ export default function ProfileSetupForm({
           onChange={(e) => setWechatId(e.target.value)}
           className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] transition-colors placeholder:text-[#444444]"
           style={{ borderRadius: 0 }}
-          placeholder="WeChat ID"
+          placeholder={t.profile.wechatIdPlaceholder}
           required
         />
       </div>
@@ -121,7 +123,7 @@ export default function ProfileSetupForm({
         className="w-full bg-[#e8c84a] text-[#0f0f0f] font-mono text-[10px] tracking-[0.2em] uppercase py-3 min-h-[44px] hover:opacity-85 active:scale-[0.97] disabled:opacity-60 transition-all"
         style={{ borderRadius: 0 }}
       >
-        Save
+        {t.profile.save}
       </button>
     </form>
   );

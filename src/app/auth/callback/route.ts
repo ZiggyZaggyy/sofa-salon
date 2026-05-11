@@ -1,23 +1,15 @@
+import { getAuthRedirectOrigin } from '@/lib/auth-redirect-origin';
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-/**
- * Get the public origin for redirects (avoids localhost when deployed behind a proxy).
- * Prefer x-forwarded-host / x-forwarded-proto, then NEXT_PUBLIC_APP_URL, then request.url.
- */
 function getRedirectOrigin(request: Request): string {
-  const url = new URL(request.url);
-  const forwardedHost = request.headers.get('x-forwarded-host');
-  const forwardedProto = request.headers.get('x-forwarded-proto');
-  if (forwardedHost) {
-    const proto = forwardedProto ?? url.protocol.replace(':', '');
-    return `${proto}://${forwardedHost}`;
-  }
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    const base = process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
-    return base;
-  }
-  return url.origin;
+  return getAuthRedirectOrigin({
+    requestUrl: request.url,
+    forwardedHost: request.headers.get('x-forwarded-host'),
+    forwardedProto: request.headers.get('x-forwarded-proto'),
+    hostHeader: request.headers.get('host'),
+    publicAppUrl: process.env.NEXT_PUBLIC_APP_URL,
+  });
 }
 
 /**

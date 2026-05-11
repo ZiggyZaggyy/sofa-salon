@@ -1,6 +1,8 @@
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { APP_NAME_PARTS } from '@/lib/config';
+import { getT } from '@/lib/i18n';
 import ProfileSetupForm from './ProfileSetupForm';
 
 export default async function ProfileSetupPage({
@@ -32,6 +34,8 @@ export default async function ProfileSetupPage({
     redirect(redirectTo);
   }
 
+  const t = getT(cookies().get('sofa-salon-locale')?.value === 'zh' ? 'zh' : 'en');
+
   return (
     <div className="min-h-screen bg-[#0f0f0f] px-4 py-8 safe-area-inset-bottom">
       <div className="max-w-md mx-auto">
@@ -40,7 +44,7 @@ export default async function ProfileSetupPage({
           <span className="text-[#e8c84a]">{APP_NAME_PARTS.slice(1).join('')}</span>
         </h1>
         <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-8">
-          Complete your profile to reserve seats
+          {t.profile.setupSubtitle}
         </p>
         <ProfileSetupForm
           initialDisplayName={profile?.display_name ?? ''}
