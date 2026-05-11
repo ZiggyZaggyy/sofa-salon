@@ -51,12 +51,10 @@ Supabase 只会把用户重定向到「已加入白名单」的地址；`redirec
 
 ## 3. 可选：Vercel 环境变量
 
-若部署环境没有正确带 `x-forwarded-host`，可在 Vercel 里设：
-
 - **Key**: `NEXT_PUBLIC_APP_URL`  
-- **Value**: `https://ziggygraph.vercel.app`（不要末尾 `/`）
+- **Value**: 填你的**主域名**（如 `https://ziggygraph.app`）与生产一致即可；**仅作兜底**。`/auth/callback` 实际跳转会以用户打开的域名为准（`x-forwarded-host` / `Host` / 请求 URL），因此用户在 **ziggygraph.app** 登录不会被迫跳回 **ziggygraph.vercel.app**，除非你只用了后者访问站点。
 
-这样回调里会用这个作为 origin，不受代理影响。
+若本地或边缘代理未带上 Host，才回退到此变量。
 
 ---
 

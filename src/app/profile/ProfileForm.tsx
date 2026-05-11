@@ -29,7 +29,7 @@ export default function ProfileForm({
   const save = async () => {
     const wechat = String(wechatId).trim();
     if (!wechat) {
-      setMessage('WeChat ID is required.');
+      setMessage(t.profile.wechatRequired);
       return;
     }
     setSaving(true);
@@ -39,7 +39,7 @@ export default function ProfileForm({
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setMessage('Not signed in.');
+      setMessage(t.profile.notSignedIn);
       setSaving(false);
       return;
     }
@@ -59,7 +59,7 @@ export default function ProfileForm({
       setMessage(error.message);
       return;
     }
-    setMessage('Saved.');
+    setMessage(t.profile.saved);
   };
 
   return (
@@ -84,7 +84,7 @@ export default function ProfileForm({
           onChange={(e) => setDisplayName(e.target.value)}
           className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] transition-colors placeholder:text-[#444444]"
           style={{ borderRadius: 0 }}
-          placeholder="Your name"
+          placeholder={t.profile.displayNamePlaceholder}
         />
       </div>
       <div>
@@ -101,7 +101,7 @@ export default function ProfileForm({
           onChange={(e) => setWechatId(e.target.value)}
           className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] transition-colors placeholder:text-[#444444]"
           style={{ borderRadius: 0 }}
-          placeholder="WeChat ID"
+          placeholder={t.profile.wechatIdPlaceholder}
           required
         />
       </div>
@@ -110,7 +110,9 @@ export default function ProfileForm({
         onSave={(config) => setAvatarConfig(config)}
       />
       {message && (
-        <p className={`font-mono text-[13px] ${message === 'Saved.' ? 'text-[#4ade80]' : 'text-[#f87171]'}`}>
+        <p
+          className={`font-mono text-[13px] ${message === t.profile.saved ? 'text-[#4ade80]' : 'text-[#f87171]'}`}
+        >
           {message}
         </p>
       )}
