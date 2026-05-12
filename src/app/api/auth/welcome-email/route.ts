@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendWelcomeEmail } from '@/lib/email';
+import { CUSTOMER_SITE_ORIGIN } from '@/lib/config';
 
 /**
  * POST /api/auth/welcome-email
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
     // no body or invalid JSON
   }
 
-  const profileUrl = `${req.nextUrl.origin}/profile`;
+  const profileUrl = `${CUSTOMER_SITE_ORIGIN}/profile`;
   try {
     await sendWelcomeEmail({ to: user.email, profileUrl, locale });
   } catch (e) {

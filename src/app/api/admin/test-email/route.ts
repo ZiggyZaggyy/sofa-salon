@@ -10,6 +10,7 @@ import {
   sendWaitlistPromotion,
   sendPostEventRatingReminder,
 } from '@/lib/email';
+import { CUSTOMER_SITE_ORIGIN } from '@/lib/config';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -46,8 +47,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const origin = req.nextUrl.origin;
-  const profileUrl = `${origin}/profile`;
+  const profileUrl = `${CUSTOMER_SITE_ORIGIN}/profile`;
   const sampleTitle = 'Test Screening — 测试放映';
   const sampleAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString();
   const sampleSeat = 'sofa-0-seat-1';

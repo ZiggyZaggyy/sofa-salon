@@ -5,7 +5,7 @@
 ### 当前逻辑
 
 - **按「家具」设定，不是按整间房**：
-  - 只有 **sofa** 和 **sofa-l** 可以挤人（chair / bench / cushion / floor 不能）。
+  - 只有 **sofa** 和 **sofa-l** 可以挤人（chair / bench / cushion / floor / bean-bag 不能）。
   - 在 **Admin → Rooms → 点进某一间房间** 的编辑页里，**选中某个沙发**，右侧面板有 **「Squeeze extra」** 滑块（0 / 1 / 2），表示「这个沙发坐满后，还能再挤几个人」。
   - 默认：sofa 和 sofa-l 的 `squeezeExtra` 都是 1（即「can squeeze one more」）。
 

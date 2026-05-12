@@ -7,6 +7,7 @@ import {
   seatKeyToDisplayLabel,
   roomCapacity,
   roomCapacityWithSqueeze,
+  getSeatPositions,
 } from '../furniture';
 import type { FurniturePiece } from '../furniture';
 
@@ -29,6 +30,10 @@ describe('seatKeyToDisplayLabel', () => {
 
   it('handles key with only colon suffix (no squeeze)', () => {
     expect(seatKeyToDisplayLabel('bench-1:0')).toBe('bench');
+  });
+
+  it('handles bean-bag key', () => {
+    expect(seatKeyToDisplayLabel('bean-bag-12:0')).toBe('bean-bag');
   });
 });
 
@@ -70,6 +75,21 @@ describe('canSqueeze', () => {
 
   it('returns false for chair', () => {
     expect(canSqueeze(piece('chair', 1))).toBe(false);
+  });
+
+  it('returns false for bean-bag', () => {
+    expect(canSqueeze(piece('bean-bag', 1))).toBe(false);
+  });
+});
+
+describe('getSeatPositions', () => {
+  it('places one seat on bean-bag near center', () => {
+    const p = piece('bean-bag', 1);
+    p.id = 'bean-bag-99';
+    const pos = getSeatPositions(p);
+    expect(pos).toHaveLength(1);
+    expect(pos[0].seatKey).toBe('bean-bag-99:0');
+    expect(pos[0].y).toBeGreaterThan(p.y);
   });
 });
 

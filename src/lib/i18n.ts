@@ -273,6 +273,7 @@ export const tEn = {
         bench: 'Bench',
         cushion: 'Cushion',
         floor: 'Floor Seat',
+        'bean-bag': 'Bean bag',
       },
       decorationTypes: {
         plant: 'Plant',
@@ -604,6 +605,7 @@ export const tZh = {
         bench: '长凳',
         cushion: '坐垫',
         floor: '坐地',
+        'bean-bag': '懒人沙发',
       },
       decorationTypes: {
         plant: '植物',

@@ -4,7 +4,6 @@ import React from 'react';
 import {
   FurniturePiece,
   lSofaSeatSplit,
-  type FurnitureType,
 } from '@/lib/furniture';
 
 function lighten(hex: string, pct: number): string {
@@ -29,6 +28,7 @@ function bw(p: FurniturePiece): number {
   if (p.type === 'chair') return 44;
   if (p.type === 'bench') return 36;
   if (p.type === 'floor') return 40;
+  if (p.type === 'bean-bag') return 56;
   return 32;
 }
 
@@ -44,6 +44,7 @@ function bh(p: FurniturePiece): number {
   if (p.type === 'chair') return 44;
   if (p.type === 'bench') return 30;
   if (p.type === 'floor') return 40;
+  if (p.type === 'bean-bag') return 56;
   return 32;
 }
 
@@ -265,6 +266,56 @@ function SofaLShape({ piece }: { piece: FurniturePiece }) {
   );
 }
 
+/** Round bean bag / 懒人沙发 with soft purple duvet look. */
+function BeanBagShape({ piece }: { piece: FurniturePiece }) {
+  const { x, y, color } = piece;
+  const dark = darken(color, 28);
+  const light = lighten(color, 22);
+  const mid = lighten(color, 10);
+  return (
+    <>
+      <ellipse cx={x} cy={y + 6} rx={31} ry={27} fill="#00000035" />
+      <ellipse cx={x} cy={y} rx={28} ry={24} fill={color} />
+      <ellipse
+        cx={x - 10}
+        cy={y - 10}
+        rx={14}
+        ry={12}
+        fill={light}
+        opacity={0.45}
+      />
+      <ellipse cx={x + 8} cy={y - 4} rx={11} ry={9} fill={mid} opacity={0.4} />
+      <ellipse
+        cx={x + 4}
+        cy={y + 8}
+        rx={16}
+        ry={10}
+        fill={dark}
+        opacity={0.22}
+      />
+      <ellipse
+        cx={x - 6}
+        cy={y + 4}
+        rx={10}
+        ry={8}
+        fill={lighten(color, 30)}
+        opacity={0.35}
+      />
+      <ellipse cx={x} cy={y - 14} rx={18} ry={6} fill={lighten(color, 35)} opacity={0.2} />
+      <ellipse
+        cx={x}
+        cy={y}
+        rx={28}
+        ry={24}
+        fill="none"
+        stroke={dark}
+        strokeWidth={1.5}
+        opacity={0.35}
+      />
+    </>
+  );
+}
+
 function ChairShape({ piece }: { piece: FurniturePiece }) {
   const { x, y, color } = piece;
   const dark = darken(color, 30);
@@ -432,6 +483,7 @@ function FurnitureSVG({ piece, selected, onSelect }: Props) {
       {type === 'bench' && <BenchShape piece={piece} />}
       {type === 'cushion' && <CushionShape piece={piece} />}
       {type === 'floor' && <FloorShape piece={piece} />}
+      {type === 'bean-bag' && <BeanBagShape piece={piece} />}
     </g>
   );
 }

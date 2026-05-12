@@ -92,6 +92,8 @@ git push -u origin main
 | `SUPABASE_SERVICE_ROLE_KEY` | 否 | 用于 waitlist 升级、发邮件等，不填则部分后台功能不可用 |
 | `RESEND_API_KEY` | 否 | 发预约/候补邮件，不填则不发邮件 |
 | `EMAIL_FROM` | 否 | 发件人邮箱（用 Resend 发信时填）；要向任意收件人发信，须先在 Resend **Domains** 验证你的发信域名，再填该域名下的地址（见 `docs/SUPABASE-RESEND-SMTP.md`） |
+| `NEXT_PUBLIC_CUSTOMER_SITE_URL` | 否 | 对外链接（邮件里的个人页、群公告里的报名链接等），默认 `https://ziggygraph.app`；预发环境可改成你的测试域名 |
+| `NEXT_PUBLIC_APP_URL` | 否 | 兜底 origin（极少用）；Auth 回调优先用用户实际访问的域名，见 `docs/GOOGLE_AUTH_SETUP.md` |
 | `NEXT_PUBLIC_APP_NAME` | 否 | 应用名称，默认 "Sofa Salon" |
 | `NEXT_PUBLIC_APP_TAGLINE` | 否 | 副标题，默认 "Your host's living room" |
 
