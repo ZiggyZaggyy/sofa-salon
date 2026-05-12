@@ -39,6 +39,31 @@ describe('sendConfirmation', () => {
     expect(call.html).toContain('My Neighbor Totoro');
     expect(call.html).toContain('Alice');
     expect(call.to).toEqual(['user@example.com']);
+    expect(call.attachments).toBeUndefined();
+  });
+
+  it('adds Google Calendar link and screening.ics when calendar is passed', async () => {
+    const { sendConfirmation } = await import('../email');
+    await sendConfirmation({
+      to: 'user@example.com',
+      screeningTitle: 'Totoro',
+      seatKey: 'sofa-1:0',
+      displayName: 'Alice',
+      wechatId: 'alice_wx',
+      screeningAt: 'June 1, 2026',
+      calendar: {
+        screeningId: '550e8400-e29b-41d4-a716-446655440000',
+        screeningAtIso: '2026-06-01T12:00:00.000Z',
+        durationMinutes: 90,
+      },
+    });
+    const call = mockSend.mock.calls[0][0];
+    expect(call.html).toContain('calendar.google.com/calendar/render');
+    expect(call.html).toContain('Add to Google Calendar');
+    expect(call.attachments).toHaveLength(1);
+    expect(call.attachments[0].filename).toBe('screening.ics');
+    expect(call.attachments[0].content).toContain('BEGIN:VCALENDAR');
+    expect(call.attachments[0].content).toContain('END:VCALENDAR');
   });
 });
 

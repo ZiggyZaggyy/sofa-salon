@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
   const { data: screening } = await supabase
     .from('screenings')
-    .select('id, title, screening_at, room_id')
+    .select('id, title, screening_at, room_id, duration_minutes')
     .eq('id', screeningId)
     .single();
   if (!screening) {
@@ -129,6 +129,14 @@ export async function POST(req: NextRequest) {
         displayName: profile?.display_name ?? 'Guest',
         wechatId: String(wechatId),
         screeningAt: new Date(screening.screening_at).toLocaleString(),
+        calendar: {
+          screeningId: screening.id,
+          screeningAtIso: new Date(screening.screening_at).toISOString(),
+          durationMinutes:
+            screening.duration_minutes != null
+              ? Number(screening.duration_minutes)
+              : null,
+        },
       });
     } catch {
       // don't fail the request if email fails
