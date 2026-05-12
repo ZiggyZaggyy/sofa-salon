@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendPostEventRatingReminder } from '@/lib/email';
+import { CUSTOMER_SITE_ORIGIN } from '@/lib/config';
 
 function getCronSecret(): string | null {
   return process.env.CRON_SECRET ?? null;
@@ -46,8 +47,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Admin client not configured' }, { status: 500 });
   }
 
-  const baseUrl = req.nextUrl.origin;
-  const profileUrl = `${baseUrl}/profile`;
+  const profileUrl = `${CUSTOMER_SITE_ORIGIN}/profile`;
   let sent = 0;
 
   for (const screening of screenings) {

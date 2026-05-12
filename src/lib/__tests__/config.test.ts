@@ -22,3 +22,25 @@ describe('config', () => {
     expect(APP_NAME_PARTS.every((p) => p.length > 0)).toBe(true);
   });
 });
+
+describe('CUSTOMER_SITE_ORIGIN', () => {
+  afterEach(() => {
+    delete process.env.NEXT_PUBLIC_CUSTOMER_SITE_URL;
+  });
+
+  it('defaults to https://ziggygraph.app when NEXT_PUBLIC_CUSTOMER_SITE_URL is unset', () => {
+    jest.isolateModules(() => {
+      delete process.env.NEXT_PUBLIC_CUSTOMER_SITE_URL;
+      const mod = require('../config') as typeof import('../config');
+      expect(mod.CUSTOMER_SITE_ORIGIN).toBe('https://ziggygraph.app');
+    });
+  });
+
+  it('uses NEXT_PUBLIC_CUSTOMER_SITE_URL and strips trailing slash', () => {
+    jest.isolateModules(() => {
+      process.env.NEXT_PUBLIC_CUSTOMER_SITE_URL = 'https://staging.example/';
+      const mod = require('../config') as typeof import('../config');
+      expect(mod.CUSTOMER_SITE_ORIGIN).toBe('https://staging.example');
+    });
+  });
+});

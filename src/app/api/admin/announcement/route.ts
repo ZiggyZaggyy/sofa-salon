@@ -3,8 +3,9 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { roomCapacity } from '@/lib/furniture';
 import type { FurniturePiece } from '@/lib/furniture';
+import { CUSTOMER_SITE_ORIGIN } from '@/lib/config';
 
-const REGISTRATION_LINK = 'https://ziggygraph.vercel.app/';
+const REGISTRATION_LINK = `${CUSTOMER_SITE_ORIGIN}/`;
 
 export async function GET() {
   const supabase = await createClient();

@@ -230,7 +230,17 @@ export default function RoomEditor({
             <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] shrink-0">
               {re.add}
             </span>
-            {(['sofa', 'sofa-l', 'chair', 'bench', 'cushion', 'floor'] as FurnitureType[]).map(
+            {(
+              [
+                'sofa',
+                'sofa-l',
+                'chair',
+                'bench',
+                'cushion',
+                'floor',
+                'bean-bag',
+              ] as FurnitureType[]
+            ).map(
               (type) => (
                 <button
                   key={type}

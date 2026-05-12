@@ -1,4 +1,11 @@
-export type FurnitureType = 'sofa' | 'sofa-l' | 'chair' | 'bench' | 'cushion' | 'floor';
+export type FurnitureType =
+  | 'sofa'
+  | 'sofa-l'
+  | 'chair'
+  | 'bench'
+  | 'cushion'
+  | 'floor'
+  | 'bean-bag';
 export type DecorationType =
   | 'plant'
   | 'lamp'
@@ -116,6 +123,13 @@ export const SEAT_RULES: Record<
     canSqueeze: false,
     defaultSqueezeExtra: 0,
   },
+  'bean-bag': {
+    fixed: true,
+    minSeats: 1,
+    maxSeats: 1,
+    canSqueeze: false,
+    defaultSqueezeExtra: 0,
+  },
 };
 
 /** Whether this piece type allows an extra "squeeze" seat when the room is full (sofa, sofa-l only). */
@@ -142,6 +156,7 @@ export const FURNITURE_DIMS: Record<FurnitureType, { w: number; h: number }> = {
   bench: { w: 36, h: 30 },
   cushion: { w: 32, h: 32 },
   floor: { w: 40, h: 40 },
+  'bean-bag': { w: 56, h: 56 },
 };
 
 /** Approximate axis-aligned bounds for decorations (from DecorationSVG). Center at (x,y). */
@@ -262,7 +277,7 @@ export function getSeatPositions(piece: FurniturePiece): SeatPos[] {
     }
   }
 
-  if (type === 'chair' || type === 'bench' || type === 'cushion' || type === 'floor') {
+  if (type === 'chair' || type === 'bench' || type === 'cushion' || type === 'floor' || type === 'bean-bag') {
     const [rx, ry] = rot(x, y + 6, x, y, rotation);
     positions.push({ seatKey: `${id}:0`, x: rx, y: ry });
   }
@@ -379,6 +394,7 @@ function defaultColor(type: FurnitureType): string {
     bench: '#4a3820',
     cushion: '#3ab87a',
     floor: '#4a3d2e',
+    'bean-bag': '#7B5399',
   };
   return defaults[type];
 }

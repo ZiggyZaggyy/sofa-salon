@@ -13,3 +13,12 @@ export const APP_TAGLINE =
 
 /** APP_NAME split by space; used for styling or header (e.g. first word in one colour). */
 export const APP_NAME_PARTS = APP_NAME.split(' ');
+
+/**
+ * Public site URL for links shared with guests (WeChat announcements, email profile links).
+ * Not used for auth callback redirects (those follow the request host / NEXT_PUBLIC_APP_URL).
+ * Override for staging: NEXT_PUBLIC_CUSTOMER_SITE_URL
+ */
+export const CUSTOMER_SITE_ORIGIN = (
+  process.env.NEXT_PUBLIC_CUSTOMER_SITE_URL?.trim() || 'https://ziggygraph.app'
+).replace(/\/$/, '');
