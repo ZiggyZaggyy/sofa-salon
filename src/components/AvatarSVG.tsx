@@ -110,11 +110,13 @@ function AvatarSVG({
   const topDark = darken(topColor, 25);
 
   if (pose === 'sit') {
+    /** View height 50 (not 60): sit drawing ends ~y=46; trim empty padding below feet so labels sit closer in seat maps. */
+    const vbH = 50;
     return (
       <svg
-        viewBox="0 0 44 60"
+        viewBox={`0 0 44 ${vbH}`}
         width={size}
-        height={Math.round((size * 60) / 44)}
+        height={Math.round((size * vbH) / 44)}
         className={`pixel ${className}`}
         style={{ display: 'block' }}
       >

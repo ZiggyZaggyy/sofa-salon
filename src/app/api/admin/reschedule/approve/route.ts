@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
   const { data: screening } = await admin
     .from('screenings')
-    .select('id, title, screening_at')
+    .select('id, title, screening_at, duration_minutes')
     .eq('id', proposal.screening_id)
     .single();
   if (!screening) {
@@ -70,7 +70,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: updateErr.message }, { status: 500 });
   }
 
-  const screeningTitle = (screening as { title: string }).title ?? '';
+  const screeningAtIso = new Date(screeningAt).toISOString();
+  const screeningRow = screening as {
+    title: string;
+    duration_minutes?: number | null;
+  };
+  const screeningTitle = screeningRow.title ?? '';
   const [{ data: reservations }] = await Promise.all([
     admin.from('reservations').select('user_id').eq('screening_id', proposal.screening_id),
   ]);
@@ -88,7 +93,19 @@ export async function POST(req: NextRequest) {
   const screeningAtStr = new Date(screeningAt).toLocaleString();
   for (const email of emails) {
     try {
-      await sendEventRescheduled({ to: email, screeningTitle, screeningAt: screeningAtStr });
+      await sendEventRescheduled({
+        to: email,
+        screeningTitle,
+        screeningAt: screeningAtStr,
+        calendar: {
+          screeningId: proposal.screening_id,
+          screeningAtIso,
+          durationMinutes:
+            screeningRow.duration_minutes != null
+              ? Number(screeningRow.duration_minutes)
+              : null,
+        },
+      });
     } catch {
       // continue
     }

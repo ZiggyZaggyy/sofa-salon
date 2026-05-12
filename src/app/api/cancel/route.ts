@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   const [{ data: screening }, { data: configRows }] = await Promise.all([
     supabase
       .from('screenings')
-      .select('screening_at, waitlist_mode, title')
+      .select('id, screening_at, waitlist_mode, title, duration_minutes')
       .eq('id', screeningId)
       .single(),
     supabase.from('ticker_config').select('key, value').eq('key', 'cancel_no_show_hours'),
@@ -161,6 +161,14 @@ export async function POST(req: NextRequest) {
               screeningTitle: screening.title,
               seatKey: freedSeatKey,
               screeningAt: new Date(screening.screening_at).toLocaleString(),
+              calendar: {
+                screeningId,
+                screeningAtIso: new Date(screening.screening_at).toISOString(),
+                durationMinutes:
+                  screening.duration_minutes != null
+                    ? Number(screening.duration_minutes)
+                    : null,
+              },
             });
           } catch {
             // ignore

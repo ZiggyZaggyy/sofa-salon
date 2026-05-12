@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
   const { data: screenings } = await supabase
     .from('screenings')
-    .select('id, title, screening_at')
+    .select('id, title, screening_at, duration_minutes')
     .gte('screening_at', now.toISOString())
     .lte('screening_at', in24h.toISOString())
     .eq('is_active', true);
@@ -67,6 +67,14 @@ export async function GET(req: NextRequest) {
           to: email,
           screeningTitle: screening.title ?? 'Screening',
           screeningAt,
+          calendar: {
+            screeningId: screening.id,
+            screeningAtIso: new Date(screening.screening_at).toISOString(),
+            durationMinutes:
+              screening.duration_minutes != null
+                ? Number(screening.duration_minutes)
+                : null,
+          },
         });
         sent++;
       } catch {

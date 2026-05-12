@@ -220,9 +220,20 @@ export async function PATCH(
       }
     }
     const screeningAtStr = new Date(screening_at).toLocaleString();
+    const row = data as { screening_at: string; duration_minutes?: number | null };
     for (const email of emails) {
       try {
-        await sendEventRescheduled({ to: email, screeningTitle, screeningAt: screeningAtStr });
+        await sendEventRescheduled({
+          to: email,
+          screeningTitle,
+          screeningAt: screeningAtStr,
+          calendar: {
+            screeningId: id,
+            screeningAtIso: new Date(row.screening_at).toISOString(),
+            durationMinutes:
+              row.duration_minutes != null ? Number(row.duration_minutes) : null,
+          },
+        });
       } catch {
         // continue
       }

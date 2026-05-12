@@ -50,6 +50,8 @@ export async function POST(req: NextRequest) {
   const profileUrl = `${CUSTOMER_SITE_ORIGIN}/profile`;
   const sampleTitle = 'Test Screening — 测试放映';
   const sampleAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString();
+  const sampleIso = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  const sampleScreeningId = '00000000-0000-0000-0000-000000000001';
   const sampleSeat = 'sofa-0-seat-1';
 
   try {
@@ -64,6 +66,11 @@ export async function POST(req: NextRequest) {
         to: email,
         screeningTitle: sampleTitle,
         screeningAt: sampleAt,
+        calendar: {
+          screeningId: sampleScreeningId,
+          screeningAtIso: sampleIso,
+          durationMinutes: 120,
+        },
       });
     } else if (type === 'waitlist_promotion') {
       await sendWaitlistPromotion({
@@ -71,6 +78,11 @@ export async function POST(req: NextRequest) {
         screeningTitle: sampleTitle,
         seatKey: sampleSeat,
         screeningAt: sampleAt,
+        calendar: {
+          screeningId: sampleScreeningId,
+          screeningAtIso: sampleIso,
+          durationMinutes: 120,
+        },
       });
     } else if (type === 'post_event_rating') {
       await sendPostEventRatingReminder({

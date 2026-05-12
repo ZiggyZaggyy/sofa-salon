@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
   const { data: screening } = await supabase
     .from('screenings')
-    .select('title, screening_at')
+    .select('id, title, screening_at, duration_minutes')
     .eq('id', screeningId)
     .single();
 
@@ -78,6 +78,14 @@ export async function POST(req: NextRequest) {
         screeningTitle: screening.title,
         seatKey,
         screeningAt: new Date(screening.screening_at).toLocaleString(),
+        calendar: {
+          screeningId: screening.id,
+          screeningAtIso: new Date(screening.screening_at).toISOString(),
+          durationMinutes:
+            screening.duration_minutes != null
+              ? Number(screening.duration_minutes)
+              : null,
+        },
       });
     } catch {
       // ignore

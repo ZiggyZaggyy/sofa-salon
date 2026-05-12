@@ -1,5 +1,12 @@
 import { Resend } from 'resend';
+import { CUSTOMER_SITE_ORIGIN } from '@/lib/config';
 import { seatKeyToDisplayLabel } from '@/lib/furniture';
+import {
+  buildGoogleCalendarTemplateUrl,
+  buildScreeningIcs,
+  screeningCalendarUid,
+  screeningEndUtc,
+} from '@/lib/screening-calendar';
 
 function getResend(): Resend | null {
   const key = process.env.RESEND_API_KEY;
@@ -23,6 +30,91 @@ function seatLabelForEmail(seatKey: string): string {
   return 'seat';
 }
 
+/** Comma-separated internal keys → "sofa, seat" for email body. */
+function seatLabelsHuman(seatKeysCsv: string): string {
+  const keys = seatKeysCsv
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (keys.length === 0) return seatLabelForEmail(seatKeysCsv);
+  if (keys.length === 1) return seatLabelForEmail(keys[0]);
+  return keys.map((k) => seatLabelForEmail(k)).join(', ');
+}
+
+/** Optional calendar block + .ics attachment (Google template link + standard ICS). */
+export type ScreeningEmailCalendar = {
+  screeningId: string;
+  /** Instant in UTC, e.g. from DB `screening_at`. */
+  screeningAtIso: string;
+  durationMinutes?: number | null;
+};
+
+type ResendAttachment = { filename: string; content: string };
+
+function escapeHtmlAttrHref(url: string): string {
+  return url.replace(/&/g, '&amp;');
+}
+
+function seatSummaryLine(seatKeysCsv: string): string | undefined {
+  const keys = seatKeysCsv
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (keys.length === 0) return undefined;
+  const labels = keys.map((k) => seatLabelForEmail(k));
+  return `Seat: ${labels.join(', ')}`;
+}
+
+function calendarFragmentAndAttachments(opts: {
+  screeningTitle: string;
+  calendar: ScreeningEmailCalendar;
+  seatKeysCsv?: string;
+}): { html: string; attachments: ResendAttachment[] } | null {
+  const start = new Date(opts.calendar.screeningAtIso);
+  if (Number.isNaN(start.getTime())) return null;
+
+  const venue = getVenueName();
+  const end = screeningEndUtc(start, opts.calendar.durationMinutes);
+  const pageUrl = `${CUSTOMER_SITE_ORIGIN}/screening/${opts.calendar.screeningId}`;
+  const seatLine = opts.seatKeysCsv ? seatSummaryLine(opts.seatKeysCsv) : undefined;
+  const detailsLines = [
+    `${opts.screeningTitle} at ${venue}`,
+    ...(seatLine ? [seatLine] : []),
+    `Details: ${pageUrl}`,
+  ];
+  const details = detailsLines.join('\n');
+
+  const googleUrl = buildGoogleCalendarTemplateUrl({
+    title: `${opts.screeningTitle} — ${venue}`,
+    start,
+    end,
+    details,
+    location: venue,
+  });
+
+  const ics = buildScreeningIcs({
+    uid: screeningCalendarUid(opts.calendar.screeningId),
+    title: `${opts.screeningTitle} — ${venue}`,
+    description: details,
+    start,
+    end,
+    url: pageUrl,
+  });
+
+  const html = `
+      <hr style="border:none;border-top:1px solid #333;margin:20px 0;" />
+      <p style="font-size:13px;margin-bottom:8px;"><strong>Add to your calendar</strong> (optional)</p>
+      <p style="font-size:12px;color:#aaa;margin-bottom:12px;">Nothing is saved to Google until you open the link and choose <strong>Save</strong>. Gmail does not add events from this email automatically.</p>
+      <p style="margin-bottom:10px;"><a href="${escapeHtmlAttrHref(googleUrl)}" style="color:#e8c84a;">Add to Google Calendar →</a></p>
+      <p style="font-size:12px;color:#888;">We've attached a calendar file (screening.ics). Open it to add the event in Apple Calendar, Outlook, etc., or ignore the attachment if you don't need it.</p>
+  `;
+
+  return {
+    html,
+    attachments: [{ filename: 'screening.ics', content: ics }],
+  };
+}
+
 /** Sends seat confirmation email after reservation (Resend). No-op if RESEND_API_KEY is unset. */
 export async function sendConfirmation(params: {
   to: string;
@@ -31,13 +123,22 @@ export async function sendConfirmation(params: {
   displayName: string;
   wechatId: string;
   screeningAt: string;
+  calendar?: ScreeningEmailCalendar;
 }) {
-  const { to, screeningTitle, seatKey, displayName, wechatId, screeningAt } =
+  const { to, screeningTitle, seatKey, displayName, wechatId, screeningAt, calendar } =
     params;
   const resend = getResend();
   if (!resend) return null;
   const venue = getVenueName();
-  const seatLabel = seatLabelForEmail(seatKey);
+  const seatLabel = seatLabelsHuman(seatKey);
+  const cal =
+    calendar != null
+      ? calendarFragmentAndAttachments({
+          screeningTitle,
+          calendar,
+          seatKeysCsv: seatKey,
+        })
+      : null;
   const { data, error } = await resend.emails.send({
     from: FROM,
     to: [to],
@@ -49,8 +150,10 @@ export async function sendConfirmation(params: {
       <p><strong>Your name:</strong> ${displayName}</p>
       <p><strong>Your WeChat ID (for host):</strong> ${wechatId}</p>
       <p>See you there!</p>
+      ${cal?.html ?? ''}
       <p style="color:#888;font-size:12px;">— from ${venue}</p>
     `,
+    ...(cal?.attachments?.length ? { attachments: cal.attachments } : {}),
   });
   if (error) throw error;
   return data;
@@ -67,7 +170,7 @@ export async function sendCancelConfirmation(params: {
   const resend = getResend();
   if (!resend) return null;
   const venue = getVenueName();
-  const seatLabel = seatLabelForEmail(seatKey);
+  const seatLabel = seatLabelsHuman(seatKey);
   const { data, error } = await resend.emails.send({
     from: FROM,
     to: [to],
@@ -89,11 +192,16 @@ export async function sendReminder(params: {
   to: string;
   screeningTitle: string;
   screeningAt: string;
+  calendar?: ScreeningEmailCalendar;
 }) {
-  const { to, screeningTitle, screeningAt } = params;
+  const { to, screeningTitle, screeningAt, calendar } = params;
   const resend = getResend();
   if (!resend) return null;
   const venue = getVenueName();
+  const cal =
+    calendar != null
+      ? calendarFragmentAndAttachments({ screeningTitle, calendar })
+      : null;
   const { data, error } = await resend.emails.send({
     from: FROM,
     to: [to],
@@ -102,8 +210,10 @@ export async function sendReminder(params: {
       <p>Reminder: <strong>${screeningTitle}</strong> at <strong>${venue}</strong> is coming up.</p>
       <p><strong>When:</strong> ${screeningAt}</p>
       <p>See you there!</p>
+      ${cal?.html ?? ''}
       <p style="color:#888;font-size:12px;">— from ${venue}</p>
     `,
+    ...(cal?.attachments?.length ? { attachments: cal.attachments } : {}),
   });
   if (error) throw error;
   return data;
@@ -115,12 +225,21 @@ export async function sendWaitlistPromotion(params: {
   screeningTitle: string;
   seatKey: string;
   screeningAt: string;
+  calendar?: ScreeningEmailCalendar;
 }) {
-  const { to, screeningTitle, seatKey, screeningAt } = params;
+  const { to, screeningTitle, seatKey, screeningAt, calendar } = params;
   const resend = getResend();
   if (!resend) return null;
   const venue = getVenueName();
-  const seatLabel = seatLabelForEmail(seatKey);
+  const seatLabel = seatLabelsHuman(seatKey);
+  const cal =
+    calendar != null
+      ? calendarFragmentAndAttachments({
+          screeningTitle,
+          calendar,
+          seatKeysCsv: seatKey,
+        })
+      : null;
   const { data, error } = await resend.emails.send({
     from: FROM,
     to: [to],
@@ -131,8 +250,10 @@ export async function sendWaitlistPromotion(params: {
       <p><strong>Your seat:</strong> ${seatLabel}</p>
       <p><strong>When:</strong> ${screeningAt}</p>
       <p>See you there!</p>
+      ${cal?.html ?? ''}
       <p style="color:#888;font-size:12px;">— from ${venue}</p>
     `,
+    ...(cal?.attachments?.length ? { attachments: cal.attachments } : {}),
   });
   if (error) throw error;
   return data;
@@ -232,11 +353,16 @@ export async function sendEventRescheduled(params: {
   to: string;
   screeningTitle: string;
   screeningAt: string;
+  calendar?: ScreeningEmailCalendar;
 }) {
-  const { to, screeningTitle, screeningAt } = params;
+  const { to, screeningTitle, screeningAt, calendar } = params;
   const resend = getResend();
   if (!resend) return null;
   const venue = getVenueName();
+  const cal =
+    calendar != null
+      ? calendarFragmentAndAttachments({ screeningTitle, calendar })
+      : null;
   const { data, error } = await resend.emails.send({
     from: FROM,
     to: [to],
@@ -245,8 +371,10 @@ export async function sendEventRescheduled(params: {
       <p>The event <strong>${screeningTitle}</strong> at <strong>${venue}</strong> has been rescheduled.</p>
       <p><strong>New time:</strong> ${screeningAt}</p>
       <p>Your reservation is still valid. See you there!</p>
+      ${cal?.html ?? ''}
       <p style="color:#888;font-size:12px;">— from ${venue}</p>
     `,
+    ...(cal?.attachments?.length ? { attachments: cal.attachments } : {}),
   });
   if (error) throw error;
   return data;

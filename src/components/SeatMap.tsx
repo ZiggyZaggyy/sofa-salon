@@ -727,7 +727,7 @@ export default function SeatMap({
                     <BloodBar
                       noShowCount={currentUserProfile?.no_show_count ?? 0}
                       segmentClassName="w-1.5 h-1.5"
-                      className="mb-0.5"
+                      className="mb-px"
                       ariaLabel={t.profile.bloodBar}
                     />
                   )}
@@ -758,10 +758,14 @@ export default function SeatMap({
                     </span>
                   )}
                   <span
-                    className={`font-mono truncate max-w-[60px] leading-none mt-0.5 ${
+                    className={`font-mono truncate text-center leading-none block ${
                       isMe ? 'text-[#e8c84a]' : 'text-[#888888]'
                     }`}
-                    style={{ fontSize: nameSize }}
+                    style={{
+                      fontSize: nameSize,
+                      maxWidth: slotW,
+                      marginTop: -Math.max(4, Math.round(slotW * 0.18)),
+                    }}
                   >
                     {reservationDisplayLabel.get(reservation.id) ??
                       reservation.ghost_name ??
@@ -852,7 +856,7 @@ export default function SeatMap({
                         <BloodBar
                           noShowCount={currentUserProfile?.no_show_count ?? 0}
                           segmentClassName="w-1.5 h-1.5"
-                          className="mb-0.5"
+                          className="mb-px"
                           ariaLabel={t.profile.bloodBar}
                         />
                       )}
@@ -883,10 +887,14 @@ export default function SeatMap({
                         </span>
                       )}
                       <span
-                        className={`font-mono truncate max-w-[56px] leading-none ${
+                        className={`font-mono truncate text-center leading-none block ${
                           isMe ? 'text-[#e8c84a]' : 'text-[#888888]'
                         }`}
-                        style={{ fontSize: nameSize }}
+                        style={{
+                          fontSize: nameSize,
+                          maxWidth: slotW,
+                          marginTop: -Math.max(4, Math.round(slotW * 0.18)),
+                        }}
                       >
                         {reservationDisplayLabel.get(reservation.id) ??
                           reservation.ghost_name ??
