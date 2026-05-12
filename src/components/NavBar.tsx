@@ -262,31 +262,97 @@ export default function NavBar() {
           </>
         ) : (
           <>
-            <a
-              href={t.nav.pastScreeningsHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${linkClass(false)} max-w-[min(140px,28vw)] sm:max-w-[180px] truncate`}
-              title={t.nav.pastScreenings}
-            >
-              {t.nav.pastScreenings}
-            </a>
-            <a
-              href={t.nav.developedByHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${linkClass(false)} max-w-[min(160px,32vw)] sm:max-w-[220px] truncate`}
-              title={t.nav.developedBy}
-            >
-              {t.nav.developedBy}
-            </a>
-            <Link
-              href="/auth/login"
-              className="bg-[#e8c84a] text-[#0f0f0f] font-mono text-[10px] tracking-[0.2em] uppercase py-3 px-8 min-h-[44px] flex items-center hover:opacity-85 active:scale-[0.97] transition-all"
-              style={{ borderRadius: 0 }}
-            >
-              {t.nav.signIn}
-            </Link>
+            {/* Guest desktop: same row as signed-in md+ layout */}
+            <nav className="hidden md:flex items-center gap-4">
+              <Link href="/" className={linkClass(pathname === '/')}>
+                {t.nav.home}
+              </Link>
+              <a
+                href={t.nav.pastScreeningsHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={linkClass(false)}
+              >
+                {t.nav.pastScreenings}
+              </a>
+              <a
+                href={t.nav.developedByHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={linkClass(false)}
+              >
+                {t.nav.developedBy}
+              </a>
+              <Link
+                href="/auth/login"
+                className="bg-[#e8c84a] text-[#0f0f0f] font-mono text-[10px] tracking-[0.2em] uppercase py-3 px-6 min-h-[44px] flex items-center hover:opacity-85 active:scale-[0.97] transition-all"
+                style={{ borderRadius: 0 }}
+              >
+                {t.nav.signIn}
+              </Link>
+            </nav>
+
+            {/* Guest mobile: hamburger only (matches signed-in — no inline nav cramming) */}
+            <div className="md:hidden relative">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((o) => !o)}
+                className="min-w-[44px] min-h-[44px] flex flex-col items-center justify-center gap-1.5 text-[#888888] hover:text-[#e8c84a]"
+                aria-expanded={mobileMenuOpen}
+                aria-label="Menu"
+              >
+                <span className="w-5 h-0.5 bg-current" />
+                <span className="w-5 h-0.5 bg-current" />
+                <span className="w-5 h-0.5 bg-current" />
+              </button>
+              {mobileMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    aria-hidden="true"
+                    onClick={() => setMobileMenuOpen(false)}
+                  />
+                  <div
+                    className="absolute right-0 top-full mt-1 py-2 min-w-[160px] bg-[#0f0f0f] border border-[#2a2a2a] z-50"
+                    style={{ borderRadius: 0 }}
+                  >
+                    <Link
+                      href="/"
+                      className={linkClass(pathname === '/') + ' px-4'}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {t.nav.home}
+                    </Link>
+                    <a
+                      href={t.nav.pastScreeningsHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={linkClass(false) + ' px-4'}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {t.nav.pastScreenings}
+                    </a>
+                    <a
+                      href={t.nav.developedByHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={linkClass(false) + ' px-4'}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {t.nav.developedBy}
+                    </a>
+                    <Link
+                      href="/auth/login"
+                      className="block mx-3 mt-1 mb-1 bg-[#e8c84a] text-[#0f0f0f] font-mono text-[10px] tracking-[0.2em] uppercase py-3 px-4 text-center hover:opacity-85 active:scale-[0.97] transition-all"
+                      style={{ borderRadius: 0 }}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {t.nav.signIn}
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
           </>
         )}
       </div>
