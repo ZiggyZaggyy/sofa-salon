@@ -1,8 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
+import { getAdminWriteClient, reservationsUpdateHint } from '@/lib/admin-db';
 import { shouldApplyNoShowForScreeningUser } from '@/lib/attendance';
 import { NextRequest, NextResponse } from 'next/server';
 
-/** Set attended for all reservations of one user in this screening. One row per user in admin UI. */
+/**
+ * Set attended for all reservations of one user in this screening.
+ *
+ * Important: `profiles` has admin UPDATE RLS (migration 25), but `reservations` did not
+ * until migration 30. Without service role or migration 30, only no_show_count changed
+ * while reservations.attended stayed null — UI looked "unset" but profile counters moved.
+ */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ screeningId: string }> }
@@ -39,24 +46,37 @@ export async function PATCH(
     );
   }
 
-  const { data: priorRows } = await supabase
+  const admin = getAdminWriteClient();
+  const db = admin ?? supabase;
+
+  const { data: priorRows } = await db
     .from('reservations')
     .select('attended')
     .eq('screening_id', screeningId)
     .eq('user_id', targetUserId);
   const hadAnyAttendedTrue = priorRows?.some((r) => r.attended === true) ?? false;
 
-  const { error: updateError } = await supabase
+  const { data: updatedRows, error: updateError } = await db
     .from('reservations')
     .update({ attended: attended ?? null })
     .eq('screening_id', screeningId)
-    .eq('user_id', targetUserId);
+    .eq('user_id', targetUserId)
+    .select('id');
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 400 });
   }
+  if (!updatedRows?.length) {
+    return NextResponse.json(
+      {
+        error: reservationsUpdateHint(admin != null),
+        code: 'reservations_not_updated',
+      },
+      { status: admin != null ? 404 : 503 }
+    );
+  }
 
-  const { data: profile } = await supabase
+  const { data: profile } = await db
     .from('profiles')
     .select('no_show_count, consecutive_attendances')
     .eq('id', targetUserId)
@@ -67,7 +87,7 @@ export async function PATCH(
 
   if (attended === true) {
     if (hadAnyAttendedTrue) {
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({ ok: true, reservationsUpdated: updatedRows.length });
     }
     const nextConsecutive = consecutive + 1;
     const isPigeon = noShow >= 3;
@@ -80,7 +100,7 @@ export async function PATCH(
     if (isPigeon && nextConsecutive >= 2) {
       updates.no_show_count = 0;
     }
-    const { error: profileErr } = await supabase
+    const { error: profileErr } = await db
       .from('profiles')
       .update(updates)
       .eq('id', targetUserId);
@@ -90,7 +110,7 @@ export async function PATCH(
   } else if (attended === false) {
     const priorValues = (priorRows ?? []).map((r) => r.attended);
     if (!shouldApplyNoShowForScreeningUser(priorValues)) {
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({ ok: true, reservationsUpdated: updatedRows.length });
     }
     const current = Math.min(noShow, 3);
     const next = Math.min(current + 1, 3);
@@ -98,7 +118,7 @@ export async function PATCH(
       consecutive_attendances: 0,
       no_show_count: next,
     };
-    const { error: profileErr } = await supabase
+    const { error: profileErr } = await db
       .from('profiles')
       .update(updates)
       .eq('id', targetUserId);
@@ -107,5 +127,5 @@ export async function PATCH(
     }
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, reservationsUpdated: updatedRows.length });
 }

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendWaitlistPromotion } from '@/lib/email';
+import { formatScreeningAtForEmail } from '@/lib/screening-datetime';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
         to: email,
         screeningTitle: screening.title,
         seatKey,
-        screeningAt: new Date(screening.screening_at).toLocaleString(),
+        screeningAt: formatScreeningAtForEmail(screening.screening_at),
         calendar: {
           screeningId: screening.id,
           screeningAtIso: new Date(screening.screening_at).toISOString(),

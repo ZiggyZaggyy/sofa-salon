@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { CUSTOMER_SITE_ORIGIN } from '@/lib/config';
+import type { ContactPlatform } from '@/lib/contact-platform';
 import { seatKeyToDisplayLabel } from '@/lib/furniture';
 import {
   buildGoogleCalendarTemplateUrl,
@@ -53,6 +54,15 @@ type ResendAttachment = { filename: string; content: string };
 
 function escapeHtmlAttrHref(url: string): string {
   return url.replace(/&/g, '&amp;');
+}
+
+function escapeHtmlText(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/\n/g, '<br />');
 }
 
 function seatSummaryLine(seatKeysCsv: string): string | undefined {
@@ -115,18 +125,33 @@ function calendarFragmentAndAttachments(opts: {
   };
 }
 
+function contactLabelForEmail(platform: ContactPlatform): string {
+  switch (platform) {
+    case 'wechat':
+      return 'WeChat ID (for host)';
+    case 'whatsapp':
+      return 'WhatsApp ID (for host)';
+    case 'instagram':
+      return 'Instagram ID (for host)';
+    case 'discord':
+      return 'Discord ID (for host)';
+  }
+}
+
 /** Sends seat confirmation email after reservation (Resend). No-op if RESEND_API_KEY is unset. */
 export async function sendConfirmation(params: {
   to: string;
   screeningTitle: string;
   seatKey: string;
   displayName: string;
-  wechatId: string;
+  contactPlatform: ContactPlatform;
+  contactId: string;
   screeningAt: string;
   calendar?: ScreeningEmailCalendar;
 }) {
-  const { to, screeningTitle, seatKey, displayName, wechatId, screeningAt, calendar } =
+  const { to, screeningTitle, seatKey, displayName, contactPlatform, contactId, screeningAt, calendar } =
     params;
+  const contactLabel = contactLabelForEmail(contactPlatform);
   const resend = getResend();
   if (!resend) return null;
   const venue = getVenueName();
@@ -148,12 +173,44 @@ export async function sendConfirmation(params: {
       <p><strong>Seat:</strong> ${seatLabel}</p>
       <p><strong>When:</strong> ${screeningAt}</p>
       <p><strong>Your name:</strong> ${displayName}</p>
-      <p><strong>Your WeChat ID (for host):</strong> ${wechatId}</p>
+      <p><strong>Your ${contactLabel}:</strong> ${contactId}</p>
       <p>See you there!</p>
       ${cal?.html ?? ''}
       <p style="color:#888;font-size:12px;">— from ${venue}</p>
     `,
     ...(cal?.attachments?.length ? { attachments: cal.attachments } : {}),
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** Admin removed a user from a screening; optional note from the host. */
+export async function sendAdminRemovedFromScreening(params: {
+  to: string;
+  screeningTitle: string;
+  screeningAt: string;
+  customMessage: string;
+}) {
+  const { to, screeningTitle, screeningAt, customMessage } = params;
+  const resend = getResend();
+  if (!resend) return null;
+  const venue = getVenueName();
+  const noteBlock =
+    customMessage.trim() !== ''
+      ? `<p style="margin:16px 0;padding:12px;border-left:3px solid #e8c84a;background:#1a1a1a;">${escapeHtmlText(customMessage.trim())}</p>`
+      : '';
+  const { data, error } = await resend.emails.send({
+    from: FROM,
+    to: [to],
+    subject: `Removed from screening — ${screeningTitle}`,
+    html: `
+      <p>Your reservation at <strong>${venue}</strong> has been removed by the host.</p>
+      <p><strong>${screeningTitle}</strong></p>
+      <p><strong>Was scheduled:</strong> ${screeningAt}</p>
+      ${noteBlock}
+      <p>If you have questions, contact the host using the channel above.</p>
+      <p style="color:#888;font-size:12px;">— from ${venue}</p>
+    `,
   });
   if (error) throw error;
   return data;

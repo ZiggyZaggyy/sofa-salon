@@ -26,6 +26,11 @@ import { useLocale } from '@/components/LocaleProvider';
 import { useRouter } from 'next/navigation';
 import { getBadgeLevel } from '@/lib/badges';
 import { fetchAttendanceCounts } from '@/lib/attendance';
+import {
+  adminContactFieldLabel,
+  getProfileContact,
+  hasProfileContact,
+} from '@/lib/contact-platform';
 
 interface Reservation {
   id: string;
@@ -37,7 +42,15 @@ interface Reservation {
   ghost_avatar?: unknown;
   friend_avatar?: unknown;
   created_at?: string | null;
-  profiles: { display_name: string; avatar_config: unknown; wechat_id?: string | null; no_show_count?: number; attendance_count?: number } | null;
+  profiles: {
+    display_name: string;
+    avatar_config: unknown;
+    wechat_id?: string | null;
+    contact_platform?: string | null;
+    contact_id?: string | null;
+    no_show_count?: number;
+    attendance_count?: number;
+  } | null;
 }
 
 interface WaitlistEntry {
@@ -63,7 +76,12 @@ interface SeatMapProps {
   initialWaitlist: WaitlistEntry[];
   waitlistMode: 'auto' | 'manual';
   currentUser: { id: string } | null;
-  currentUserProfile: { wechat_id: string | null; no_show_count?: number } | null;
+  currentUserProfile: {
+    wechat_id: string | null;
+    contact_platform?: string | null;
+    contact_id?: string | null;
+    no_show_count?: number;
+  } | null;
   isAdmin?: boolean;
   /** When true (e.g. ?testSqueeze=1 for admin), show squeeze slots even when not full so admin can test 挤一挤 */
   testSqueeze?: boolean;
@@ -204,7 +222,7 @@ export default function SeatMap({
 
     async function fetchReservations() {
       const select = isAdmin
-        ? 'id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, friend_avatar, created_at, profiles(display_name, avatar_config, wechat_id, no_show_count)'
+        ? 'id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, friend_avatar, created_at, profiles(display_name, avatar_config, wechat_id, contact_platform, contact_id, no_show_count)'
         : 'id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, friend_avatar, created_at, profiles(display_name, avatar_config, no_show_count)';
       const { data } = await supabase
         .from('reservations')
@@ -414,16 +432,14 @@ export default function SeatMap({
     allFull &&
     !myWaitlistEntry &&
     (myReservations.length === 0 || (isAdmin && testSqueeze));
-  const wechatFilled =
-    currentUserProfile?.wechat_id != null &&
-    String(currentUserProfile.wechat_id).trim() !== '';
+  const contactFilled = hasProfileContact(currentUserProfile ?? undefined);
 
   const openClaim = (seatKey: string) => {
     if (!currentUser) {
       router.push(`/auth/login?redirect=${encodeURIComponent(`/screening/${screeningId}`)}`);
       return;
     }
-    if (!wechatFilled) {
+    if (!contactFilled) {
       router.push('/profile/setup');
       return;
     }
@@ -441,7 +457,7 @@ export default function SeatMap({
       router.push(`/auth/login?redirect=${encodeURIComponent(`/screening/${screeningId}`)}`);
       return;
     }
-    if (!wechatFilled) {
+    if (!contactFilled) {
       router.push('/profile/setup');
       return;
     }
@@ -489,7 +505,7 @@ export default function SeatMap({
       router.push(`/auth/login?redirect=${encodeURIComponent(`/screening/${screeningId}`)}`);
       return;
     }
-    if (!wechatFilled) {
+    if (!contactFilled) {
       router.push('/profile/setup');
       return;
     }
@@ -499,7 +515,7 @@ export default function SeatMap({
 
   const performJoinWaitlist = async () => {
     if (!currentUser || myWaitlistEntry || loading) return;
-    if (!wechatFilled) {
+    if (!contactFilled) {
       router.push('/profile/setup');
       return;
     }
@@ -1436,23 +1452,35 @@ export default function SeatMap({
                   {adminDetailReservation.ghost_name ?? adminDetailReservation.profiles?.display_name ?? '—'}
                 </p>
               </div>
-              <div>
-                <span className="text-[#888888]">{t.admin.wechatId}</span>
-                <p className="text-[#e8e4dc] mt-0.5 break-all">
-                  {adminDetailReservation.profiles?.wechat_id ?? '—'}
-                </p>
-                {adminDetailReservation.profiles?.wechat_id && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard?.writeText(adminDetailReservation.profiles!.wechat_id!);
-                    }}
-                    className="mt-2 text-[10px] tracking-[0.2em] uppercase text-[#e8c84a] hover:underline"
-                  >
-                    {t.admin.copyWechat}
-                  </button>
-                )}
-              </div>
+              {(() => {
+                const contact = getProfileContact(adminDetailReservation.profiles ?? {});
+                const contactLabels = {
+                  wechat: t.admin.contactIdLabelWechat,
+                  whatsapp: t.admin.contactIdLabelWhatsapp,
+                  instagram: t.admin.contactIdLabelInstagram,
+                  discord: t.admin.contactIdLabelDiscord,
+                };
+                const fieldLabel = adminContactFieldLabel(contact.platform, contactLabels);
+                return (
+                  <div>
+                    <span className="text-[#888888]">{fieldLabel}</span>
+                    <p className="text-[#e8e4dc] mt-0.5 break-all">
+                      {contact.id || '—'}
+                    </p>
+                    {contact.id ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(contact.id);
+                        }}
+                        className="mt-2 text-[10px] tracking-[0.2em] uppercase text-[#e8c84a] hover:underline"
+                      >
+                        {t.admin.copyContactId}
+                      </button>
+                    ) : null}
+                  </div>
+                );
+              })()}
             </div>
             <button
               type="button"

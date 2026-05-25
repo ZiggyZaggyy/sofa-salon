@@ -6,6 +6,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendCancelConfirmation, sendWaitlistPromotion } from '@/lib/email';
+import { formatScreeningAtForEmail } from '@/lib/screening-datetime';
 import { fetchAttendanceCounts } from '@/lib/attendance';
 
 export async function POST(req: NextRequest) {
@@ -106,7 +107,9 @@ export async function POST(req: NextRequest) {
         to: cancelUserEmail,
         screeningTitle: screening?.title ?? 'Screening',
         seatKey: freedSeatKey,
-        screeningAt: screening?.screening_at ? new Date(screening.screening_at).toLocaleString() : '',
+        screeningAt: screening?.screening_at
+          ? formatScreeningAtForEmail(screening.screening_at)
+          : '',
       });
     } catch {
       // ignore
@@ -160,7 +163,7 @@ export async function POST(req: NextRequest) {
               to: email,
               screeningTitle: screening.title,
               seatKey: freedSeatKey,
-              screeningAt: new Date(screening.screening_at).toLocaleString(),
+              screeningAt: formatScreeningAtForEmail(screening.screening_at),
               calendar: {
                 screeningId,
                 screeningAtIso: new Date(screening.screening_at).toISOString(),

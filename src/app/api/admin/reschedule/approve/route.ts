@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEventRescheduled } from '@/lib/email';
+import { formatScreeningAtForEmail } from '@/lib/screening-datetime';
 
 const TICKER_EXPIRY_DAYS = 3;
 
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
       // skip
     }
   }
-  const screeningAtStr = new Date(screeningAt).toLocaleString();
+  const screeningAtStr = formatScreeningAtForEmail(screeningAt);
   for (const email of emails) {
     try {
       await sendEventRescheduled({

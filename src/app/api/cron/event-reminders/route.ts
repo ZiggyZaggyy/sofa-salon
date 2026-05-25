@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendReminder } from '@/lib/email';
+import { formatScreeningAtForEmail } from '@/lib/screening-datetime';
 
 function getCronSecret(): string | null {
   return process.env.CRON_SECRET ?? null;
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
       .or('is_ghost.eq(false),is_ghost.is.null');
 
     const userIds = Array.from(new Set((reservations ?? []).map((r: { user_id: string }) => r.user_id)));
-    const screeningAt = new Date(screening.screening_at).toLocaleString();
+    const screeningAt = formatScreeningAtForEmail(screening.screening_at);
 
     for (const userId of userIds) {
       const { data: userData } = await admin.auth.admin.getUserById(userId);

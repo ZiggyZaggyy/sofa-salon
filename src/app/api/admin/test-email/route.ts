@@ -11,6 +11,7 @@ import {
   sendPostEventRatingReminder,
 } from '@/lib/email';
 import { CUSTOMER_SITE_ORIGIN } from '@/lib/config';
+import { formatScreeningAtForEmail } from '@/lib/screening-datetime';
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -49,8 +50,8 @@ export async function POST(req: NextRequest) {
 
   const profileUrl = `${CUSTOMER_SITE_ORIGIN}/profile`;
   const sampleTitle = 'Test Screening — 测试放映';
-  const sampleAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString();
   const sampleIso = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  const sampleAt = formatScreeningAtForEmail(sampleIso);
   const sampleScreeningId = '00000000-0000-0000-0000-000000000001';
   const sampleSeat = 'sofa-0-seat-1';
 

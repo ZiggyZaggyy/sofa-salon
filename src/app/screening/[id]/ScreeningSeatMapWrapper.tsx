@@ -15,7 +15,15 @@ interface Reservation {
   ghost_avatar?: unknown;
   friend_avatar?: unknown;
   created_at?: string | null;
-  profiles: { display_name: string; avatar_config: unknown; wechat_id?: string | null; no_show_count?: number; attendance_count?: number } | null;
+  profiles: {
+    display_name: string;
+    avatar_config: unknown;
+    wechat_id?: string | null;
+    contact_platform?: string | null;
+    contact_id?: string | null;
+    no_show_count?: number;
+    attendance_count?: number;
+  } | null;
 }
 
 interface WaitlistEntry {
@@ -37,7 +45,12 @@ interface Props {
   initialWaitlist: WaitlistEntry[];
   waitlistMode: 'auto' | 'manual';
   currentUser: { id: string } | null;
-  currentUserProfile: { wechat_id: string | null; no_show_count?: number } | null;
+  currentUserProfile: {
+    wechat_id: string | null;
+    contact_platform?: string | null;
+    contact_id?: string | null;
+    no_show_count?: number;
+  } | null;
   isAdmin: boolean;
   testSqueeze?: boolean;
 }

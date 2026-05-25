@@ -1,3 +1,4 @@
+import { hasProfileContact } from '@/lib/contact-platform';
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
@@ -56,14 +57,11 @@ export async function middleware(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('wechat_id')
+      .select('wechat_id, contact_platform, contact_id')
       .eq('id', user.id)
       .single();
 
-    const wechatEmpty =
-      profile?.wechat_id == null || String(profile.wechat_id).trim() === '';
-
-    if (wechatEmpty && path !== '/profile/setup') {
+    if (!hasProfileContact(profile) && path !== '/profile/setup') {
       const redirect = new URL('/profile/setup', request.url);
       redirect.searchParams.set('redirect', path);
       return NextResponse.redirect(redirect);

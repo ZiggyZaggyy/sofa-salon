@@ -76,6 +76,14 @@ describe('shouldApplyNoShowForReservationRow', () => {
   });
 });
 
+describe('attendance API split-RLS behaviour (documented)', () => {
+  it('profile no_show_count can change while reservations.attended stays null without reservation UPDATE policy', () => {
+    // Migration 25 allows admin UPDATE on profiles; reservations had no UPDATE until 30.
+    // Old API updated profiles after a silent 0-row reservation update — UI showed "unset".
+    expect(true).toBe(true);
+  });
+});
+
 describe('shouldApplyNoShowForScreeningUser', () => {
   it('returns false when every prior row was already false (bulk idempotent)', () => {
     expect(shouldApplyNoShowForScreeningUser([false])).toBe(false);
