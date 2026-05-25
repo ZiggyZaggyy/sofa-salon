@@ -26,7 +26,7 @@ export default async function ProfilePage() {
   const [profileRes, pastReservationsRes, ratingsRes] = await Promise.all([
     supabase
       .from('profiles')
-      .select('display_name, wechat_id, avatar_config, no_show_count')
+      .select('display_name, wechat_id, contact_platform, contact_id, avatar_config, no_show_count')
       .eq('id', user.id)
       .single(),
     supabase
@@ -149,6 +149,8 @@ export default async function ProfilePage() {
         </div>
         <ProfileForm
           initialDisplayName={profile?.display_name ?? ''}
+          initialContactPlatform={profile?.contact_platform ?? 'wechat'}
+          initialContactId={profile?.contact_id ?? ''}
           initialWechatId={profile?.wechat_id ?? ''}
           initialAvatarConfig={profile?.avatar_config ?? {}}
         />

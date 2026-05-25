@@ -1,3 +1,4 @@
+import { hasProfileContact } from '@/lib/contact-platform';
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -12,13 +13,12 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('wechat_id')
+    .select('wechat_id, contact_platform, contact_id')
     .eq('id', user.id)
     .single();
-  const wechatId = profile?.wechat_id;
-  if (wechatId == null || String(wechatId).trim() === '') {
+  if (!hasProfileContact(profile)) {
     return NextResponse.json(
-      { error: 'WeChat ID required. Complete profile setup first.' },
+      { error: 'Contact ID required. Complete profile setup first.' },
       { status: 400 }
     );
   }

@@ -3,23 +3,42 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import AvatarRegen from '@/components/AvatarRegen';
+import ProfileContactFields from '@/components/ProfileContactFields';
 import { jsonToConfig, type AvatarConfig } from '@/lib/avatar';
+import {
+  getProfileContact,
+  isContactIdUniqueViolation,
+  profileContactUpsertFields,
+  type ContactPlatform,
+} from '@/lib/contact-platform';
 import { useLocale } from '@/components/LocaleProvider';
 
 interface Props {
   initialDisplayName: string;
+  initialContactPlatform: string;
+  initialContactId: string;
   initialWechatId: string;
   initialAvatarConfig: unknown;
 }
 
 export default function ProfileForm({
   initialDisplayName,
+  initialContactPlatform,
+  initialContactId,
   initialWechatId,
   initialAvatarConfig,
 }: Props) {
   const { t } = useLocale();
+  const legacy = getProfileContact({
+    contact_platform: initialContactPlatform,
+    contact_id: initialContactId,
+    wechat_id: initialWechatId,
+  });
   const [displayName, setDisplayName] = useState(initialDisplayName);
-  const [wechatId, setWechatId] = useState(initialWechatId);
+  const [contactPlatform, setContactPlatform] = useState<ContactPlatform>(legacy.platform);
+  const [contactId, setContactId] = useState(
+    legacy.id || initialContactId || initialWechatId
+  );
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(
     jsonToConfig(initialAvatarConfig)
   );
@@ -27,9 +46,9 @@ export default function ProfileForm({
   const [message, setMessage] = useState('');
 
   const save = async () => {
-    const wechat = String(wechatId).trim();
-    if (!wechat) {
-      setMessage(t.profile.wechatRequired);
+    const id = String(contactId).trim();
+    if (!id) {
+      setMessage(t.profile.contactRequired);
       return;
     }
     setSaving(true);
@@ -43,20 +62,22 @@ export default function ProfileForm({
       setSaving(false);
       return;
     }
-    const { error } = await supabase
-      .from('profiles')
-      .upsert(
-        {
-          id: user.id,
-          display_name: displayName.trim() || (user.email?.split('@')[0] ?? 'Guest'),
-          wechat_id: wechat,
-          avatar_config: avatarConfig,
-        },
-        { onConflict: 'id' }
-      );
+    const { error } = await supabase.from('profiles').upsert(
+      {
+        id: user.id,
+        display_name: displayName.trim() || (user.email?.split('@')[0] ?? 'Guest'),
+        avatar_config: avatarConfig,
+        ...profileContactUpsertFields(contactPlatform, id),
+      },
+      { onConflict: 'id' }
+    );
     setSaving(false);
     if (error) {
-      setMessage(error.message);
+      setMessage(
+        isContactIdUniqueViolation(error.message)
+          ? t.profile.contactIdTaken
+          : error.message
+      );
       return;
     }
     setMessage(t.profile.saved);
@@ -87,24 +108,13 @@ export default function ProfileForm({
           placeholder={t.profile.displayNamePlaceholder}
         />
       </div>
-      <div>
-        <label
-          htmlFor="wechatId"
-          className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2"
-        >
-          {t.profile.wechatId} <span className="text-[#f87171]">*</span>
-        </label>
-        <input
-          id="wechatId"
-          type="text"
-          value={wechatId}
-          onChange={(e) => setWechatId(e.target.value)}
-          className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] transition-colors placeholder:text-[#444444]"
-          style={{ borderRadius: 0 }}
-          placeholder={t.profile.wechatIdPlaceholder}
-          required
-        />
-      </div>
+      <ProfileContactFields
+        platform={contactPlatform}
+        onPlatformChange={setContactPlatform}
+        contactId={contactId}
+        onContactIdChange={setContactId}
+        idPrefix="profile"
+      />
       <AvatarRegen
         initialConfig={avatarConfig}
         onSave={(config) => setAvatarConfig(config)}

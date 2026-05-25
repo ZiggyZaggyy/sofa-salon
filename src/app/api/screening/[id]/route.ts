@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEventCancelled, sendEventRescheduled } from '@/lib/email';
+import { formatScreeningAtForEmail } from '@/lib/screening-datetime';
 import { screeningDeleteSkipsCancellationNotify } from '@/lib/screening-delete-policy';
 import { persistScreeningAltLocale } from '@/lib/persist-screening-alt-locale';
 import { textFieldFromPatchOrPreserve } from '@/lib/patch-body-merge';
@@ -219,7 +220,7 @@ export async function PATCH(
         if (u?.user?.email) emails.push(u.user.email);
       }
     }
-    const screeningAtStr = new Date(screening_at).toLocaleString();
+    const screeningAtStr = formatScreeningAtForEmail(screening_at);
     const row = data as { screening_at: string; duration_minutes?: number | null };
     for (const email of emails) {
       try {

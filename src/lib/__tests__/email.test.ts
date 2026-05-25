@@ -29,7 +29,8 @@ describe('sendConfirmation', () => {
       screeningTitle: 'My Neighbor Totoro',
       seatKey: 'sofa-1:0',
       displayName: 'Alice',
-      wechatId: 'alice_wx',
+      contactPlatform: 'wechat',
+      contactId: 'alice_wx',
       screeningAt: '2025-03-15 19:00',
     });
     expect(mockSend).toHaveBeenCalledTimes(1);
@@ -49,7 +50,8 @@ describe('sendConfirmation', () => {
       screeningTitle: 'Totoro',
       seatKey: 'sofa-1:0',
       displayName: 'Alice',
-      wechatId: 'alice_wx',
+      contactPlatform: 'wechat',
+      contactId: 'alice_wx',
       screeningAt: 'June 1, 2026',
       calendar: {
         screeningId: '550e8400-e29b-41d4-a716-446655440000',
@@ -64,6 +66,24 @@ describe('sendConfirmation', () => {
     expect(call.attachments[0].filename).toBe('screening.ics');
     expect(call.attachments[0].content).toContain('BEGIN:VCALENDAR');
     expect(call.attachments[0].content).toContain('END:VCALENDAR');
+  });
+});
+
+describe('sendAdminRemovedFromScreening', () => {
+  it('includes screening time and escaped custom message in body', async () => {
+    const { sendAdminRemovedFromScreening } = await import('../email');
+    await sendAdminRemovedFromScreening({
+      to: 'user@example.com',
+      screeningTitle: 'Exotica',
+      screeningAt: 'Sun, May 24, 2026',
+      customMessage: 'Schedule conflict <sorry>',
+    });
+    const call = mockSend.mock.calls[0][0];
+    expect(call.subject).toContain('Removed from screening');
+    expect(call.html).toContain('Exotica');
+    expect(call.html).toContain('Sun, May 24, 2026');
+    expect(call.html).toContain('Schedule conflict &lt;sorry&gt;');
+    expect(call.html).not.toContain('<sorry>');
   });
 });
 

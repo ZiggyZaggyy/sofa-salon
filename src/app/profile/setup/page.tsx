@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { APP_NAME_PARTS } from '@/lib/config';
 import { getT } from '@/lib/i18n';
+import { hasProfileContact } from '@/lib/contact-platform';
 import ProfileSetupForm from './ProfileSetupForm';
 
 export default async function ProfileSetupPage({
@@ -24,13 +25,11 @@ export default async function ProfileSetupPage({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, wechat_id, avatar_config')
+    .select('display_name, wechat_id, contact_platform, contact_id, avatar_config')
     .eq('id', user.id)
     .single();
 
-  const wechatFilled =
-    profile?.wechat_id != null && String(profile.wechat_id).trim() !== '';
-  if (wechatFilled) {
+  if (hasProfileContact(profile)) {
     redirect(redirectTo);
   }
 
@@ -48,6 +47,8 @@ export default async function ProfileSetupPage({
         </p>
         <ProfileSetupForm
           initialDisplayName={profile?.display_name ?? ''}
+          initialContactPlatform={profile?.contact_platform ?? 'wechat'}
+          initialContactId={profile?.contact_id ?? ''}
           initialWechatId={profile?.wechat_id ?? ''}
           initialAvatarConfig={profile?.avatar_config ?? {}}
           redirectTo={redirectTo}

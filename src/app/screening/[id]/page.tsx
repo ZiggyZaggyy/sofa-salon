@@ -9,7 +9,7 @@ import { fetchAttendanceCounts } from '@/lib/attendance';
 import BackButton from '@/components/BackButton';
 import SeatMap from '@/components/SeatMap';
 import GhostSeatManager from '@/components/GhostSeatManager';
-import AttendanceManager from '@/components/AttendanceManager';
+import AdminScreeningGuests from '@/components/AdminScreeningGuests';
 import ScreeningRedirect from '@/components/ScreeningRedirect';
 import ScreeningSeatMapWrapper from './ScreeningSeatMapWrapper';
 import ScreeningFilmHeading from './ScreeningFilmHeading';
@@ -73,7 +73,11 @@ export default async function ScreeningPage({
   const decorations = (room.decorations_json as Array<unknown>) ?? [];
 
   const { data: userProfile } = user
-    ? await supabase.from('profiles').select('wechat_id, is_admin, no_show_count').eq('id', user.id).single()
+    ? await supabase
+        .from('profiles')
+        .select('wechat_id, contact_platform, contact_id, is_admin, no_show_count')
+        .eq('id', user.id)
+        .single()
     : { data: null };
   const isAdmin = userProfile?.is_admin === true;
   const testSqueeze = isAdmin && squeezeTestParam === '1';
@@ -93,7 +97,7 @@ export default async function ScreeningPage({
     [k: string]: unknown;
   };
   const RESERVATION_SELECT =
-    'id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, friend_avatar, attended, created_at, profiles(display_name, avatar_config, wechat_id, no_show_count)';
+    'id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, friend_avatar, attended, created_at, profiles(display_name, avatar_config, wechat_id, contact_platform, contact_id, no_show_count)';
 
   if (admin) {
     const [res, wl] = await Promise.all([
@@ -222,15 +226,39 @@ export default async function ScreeningPage({
         </div>
       )}
       {isAdmin && (
-        <AttendanceManager
+        <AdminScreeningGuests
           screeningId={id}
-          reservations={(reservations ?? []) as unknown as Parameters<typeof AttendanceManager>[0]['reservations']}
+          reservations={(reservations ?? []) as unknown as Parameters<typeof AdminScreeningGuests>[0]['reservations']}
           labels={{
-            title: t.admin.attendanceTitle,
+            title: t.admin.guestsTitle,
+            addGuest: t.admin.guestsAddHint,
+            displayNamePlaceholder: t.admin.guestsDisplayNamePlaceholder,
+            addButton: t.admin.guestsAddButton,
+            displayNameNotFound: t.admin.guestsDisplayNameNotFound,
+            displayNameAmbiguous: t.admin.guestsDisplayNameAmbiguous,
+            pickCandidate: t.admin.guestsPickCandidate,
+            userMissingWechat: t.admin.guestsMissingWechat,
+            userAlreadyReserved: t.admin.guestsAlreadyReserved,
+            noSeatsAvailable: t.admin.guestsNoSeats,
+            remove: t.admin.guestsRemove,
+            removalMessageLabel: t.admin.guestsRemovalMessageLabel,
+            removalMessagePlaceholder: t.admin.guestsRemovalMessagePlaceholder,
+            confirmRemove: t.admin.guestsConfirmRemove,
+            cancel: t.admin.guestsCancel,
+            guestsEmpty: t.admin.guestsEmpty,
             attended: t.admin.attended,
             noShow: t.admin.noShow,
             unset: t.admin.unset,
             seatsCount: t.admin.seatsCount,
+            saveFailed: t.admin.attendanceSaveFailed,
+            reservationsNotUpdated: t.admin.attendanceReservationsNotUpdated,
+            actionFailed: t.admin.guestsActionFailed,
+            contactLineLabels: {
+              wechat: t.admin.contactIdLabelWechat,
+              whatsapp: t.admin.contactIdLabelWhatsapp,
+              instagram: t.admin.contactIdLabelInstagram,
+              discord: t.admin.contactIdLabelDiscord,
+            },
           }}
         />
       )}
@@ -251,7 +279,16 @@ export default async function ScreeningPage({
           initialWaitlist={(waitlist ?? []) as unknown as Parameters<typeof SeatMap>[0]['initialWaitlist']}
           waitlistMode={(screening.waitlist_mode as 'auto' | 'manual') ?? 'auto'}
           currentUser={user ? { id: user.id } : null}
-          currentUserProfile={userProfile ? { wechat_id: userProfile.wechat_id, no_show_count: userProfile.no_show_count ?? 0 } : null}
+          currentUserProfile={
+            userProfile
+              ? {
+                  wechat_id: userProfile.wechat_id,
+                  contact_platform: userProfile.contact_platform,
+                  contact_id: userProfile.contact_id,
+                  no_show_count: userProfile.no_show_count ?? 0,
+                }
+              : null
+          }
           isAdmin={isAdmin}
           testSqueeze={testSqueeze}
         />

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getAdminWriteClient, reservationsUpdateHint } from '@/lib/admin-db';
 import { shouldApplyNoShowForReservationRow } from '@/lib/attendance';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -36,7 +37,10 @@ export async function PATCH(
     );
   }
 
-  const { data: before } = await supabase
+  const admin = getAdminWriteClient();
+  const db = admin ?? supabase;
+
+  const { data: before } = await db
     .from('reservations')
     .select('id, screening_id, user_id, attended')
     .eq('id', id)
@@ -46,7 +50,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Reservation not found' }, { status: 404 });
   }
 
-  const { data: siblings } = await supabase
+  const { data: siblings } = await db
     .from('reservations')
     .select('id, attended')
     .eq('screening_id', before.screening_id)
@@ -60,7 +64,7 @@ export async function PATCH(
   const otherSeatHadAttendedFalse =
     siblings?.some((r) => r.id !== before.id && r.attended === false) ?? false;
 
-  const { data: reservation, error } = await supabase
+  const { data: reservation, error } = await db
     .from('reservations')
     .update({ attended: attended ?? null })
     .eq('id', id)
@@ -70,13 +74,22 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+  if (!reservation) {
+    return NextResponse.json(
+      {
+        error: reservationsUpdateHint(admin != null),
+        code: 'reservations_not_updated',
+      },
+      { status: admin != null ? 404 : 503 }
+    );
+  }
 
   const userId = reservation?.user_id;
   if (!userId) {
     return NextResponse.json(reservation);
   }
 
-  const { data: guestProfile } = await supabase
+  const { data: guestProfile } = await db
     .from('profiles')
     .select('no_show_count, consecutive_attendances')
     .eq('id', userId)
@@ -101,7 +114,7 @@ export async function PATCH(
     if (isPigeon && nextConsecutive >= 2) {
       updates.no_show_count = 0;
     }
-    const { error: profileErr } = await supabase.from('profiles').update(updates).eq('id', userId);
+    const { error: profileErr } = await db.from('profiles').update(updates).eq('id', userId);
     if (profileErr) {
       return NextResponse.json({ error: profileErr.message }, { status: 500 });
     }
@@ -115,7 +128,7 @@ export async function PATCH(
       consecutive_attendances: 0,
       no_show_count: next,
     };
-    const { error: profileErr } = await supabase.from('profiles').update(updates).eq('id', userId);
+    const { error: profileErr } = await db.from('profiles').update(updates).eq('id', userId);
     if (profileErr) {
       return NextResponse.json({ error: profileErr.message }, { status: 500 });
     }

@@ -5,7 +5,9 @@
  */
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { getProfileContact, hasProfileContact } from '@/lib/contact-platform';
 import { sendConfirmation } from '@/lib/email';
+import { formatScreeningAtForEmail } from '@/lib/screening-datetime';
 import { randomAvatarConfig } from '@/lib/avatar';
 
 export async function POST(req: NextRequest) {
@@ -19,17 +21,17 @@ export async function POST(req: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, wechat_id')
+    .select('display_name, wechat_id, contact_platform, contact_id')
     .eq('id', user.id)
     .single();
 
-  const wechatId = profile?.wechat_id;
-  if (wechatId == null || String(wechatId).trim() === '') {
+  if (!hasProfileContact(profile)) {
     return NextResponse.json(
-      { error: 'WeChat ID required. Complete profile setup first.' },
+      { error: 'Contact ID required. Complete profile setup first.' },
       { status: 400 }
     );
   }
+  const guestContact = getProfileContact(profile ?? {});
 
   const body = await req.json();
   const { screeningId, seatKey, seatKeys, isSqueezed } = body;
@@ -127,8 +129,9 @@ export async function POST(req: NextRequest) {
         screeningTitle: screening.title,
         seatKey: inserted.map((r) => r.seat_key).join(', '),
         displayName: profile?.display_name ?? 'Guest',
-        wechatId: String(wechatId),
-        screeningAt: new Date(screening.screening_at).toLocaleString(),
+        contactPlatform: guestContact.platform,
+        contactId: guestContact.id,
+        screeningAt: formatScreeningAtForEmail(screening.screening_at),
         calendar: {
           screeningId: screening.id,
           screeningAtIso: new Date(screening.screening_at).toISOString(),

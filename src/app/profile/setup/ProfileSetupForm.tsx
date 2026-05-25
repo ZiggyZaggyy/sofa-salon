@@ -4,11 +4,21 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import AvatarRegen from '@/components/AvatarRegen';
+import ProfileContactFields from '@/components/ProfileContactFields';
 import { jsonToConfig, type AvatarConfig } from '@/lib/avatar';
+import {
+  getProfileContact,
+  isContactIdUniqueViolation,
+  normalizeContactPlatform,
+  profileContactUpsertFields,
+  type ContactPlatform,
+} from '@/lib/contact-platform';
 import { useLocale } from '@/components/LocaleProvider';
 
 interface Props {
   initialDisplayName: string;
+  initialContactPlatform: string;
+  initialContactId: string;
   initialWechatId: string;
   initialAvatarConfig: unknown;
   redirectTo?: string;
@@ -16,14 +26,24 @@ interface Props {
 
 export default function ProfileSetupForm({
   initialDisplayName,
+  initialContactPlatform,
+  initialContactId,
   initialWechatId,
   initialAvatarConfig,
   redirectTo = '/',
 }: Props) {
   const router = useRouter();
   const { t } = useLocale();
+  const legacy = getProfileContact({
+    contact_platform: initialContactPlatform,
+    contact_id: initialContactId,
+    wechat_id: initialWechatId,
+  });
   const [displayName, setDisplayName] = useState(initialDisplayName);
-  const [wechatId, setWechatId] = useState(initialWechatId);
+  const [contactPlatform, setContactPlatform] = useState<ContactPlatform>(legacy.platform);
+  const [contactId, setContactId] = useState(
+    legacy.id || initialContactId || initialWechatId
+  );
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(
     jsonToConfig(initialAvatarConfig)
   );
@@ -31,9 +51,9 @@ export default function ProfileSetupForm({
   const [error, setError] = useState('');
 
   const save = async () => {
-    const wechat = String(wechatId).trim();
-    if (!wechat) {
-      setError(t.profile.wechatRequired);
+    const id = String(contactId).trim();
+    if (!id) {
+      setError(t.profile.contactRequired);
       return;
     }
     setSaving(true);
@@ -47,20 +67,23 @@ export default function ProfileSetupForm({
       setSaving(false);
       return;
     }
-    const { error: e } = await supabase
-      .from('profiles')
-      .upsert(
-        {
-          id: user.id,
-          display_name: displayName.trim() || (user.email?.split('@')[0] ?? 'Guest'),
-          wechat_id: wechat,
-          avatar_config: avatarConfig,
-        },
-        { onConflict: 'id' }
-      );
+    const platform = normalizeContactPlatform(contactPlatform);
+    const { error: e } = await supabase.from('profiles').upsert(
+      {
+        id: user.id,
+        display_name: displayName.trim() || (user.email?.split('@')[0] ?? 'Guest'),
+        avatar_config: avatarConfig,
+        ...profileContactUpsertFields(platform, id),
+      },
+      { onConflict: 'id' }
+    );
     setSaving(false);
     if (e) {
-      setError(e.message);
+      setError(
+        isContactIdUniqueViolation(e.message)
+          ? t.profile.contactIdTaken
+          : e.message
+      );
       return;
     }
     router.push(redirectTo);
@@ -92,24 +115,13 @@ export default function ProfileSetupForm({
           placeholder={t.profile.displayNamePlaceholder}
         />
       </div>
-      <div>
-        <label
-          htmlFor="wechatId"
-          className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2"
-        >
-          {t.profile.wechatId} <span className="text-[#f87171]">*</span>
-        </label>
-        <input
-          id="wechatId"
-          type="text"
-          value={wechatId}
-          onChange={(e) => setWechatId(e.target.value)}
-          className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] transition-colors placeholder:text-[#444444]"
-          style={{ borderRadius: 0 }}
-          placeholder={t.profile.wechatIdPlaceholder}
-          required
-        />
-      </div>
+      <ProfileContactFields
+        platform={contactPlatform}
+        onPlatformChange={setContactPlatform}
+        contactId={contactId}
+        onContactIdChange={setContactId}
+        idPrefix="setup"
+      />
       <AvatarRegen
         initialConfig={avatarConfig}
         onSave={(config) => setAvatarConfig(config)}

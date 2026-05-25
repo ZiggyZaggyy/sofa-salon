@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { APP_NAME_PARTS } from '@/lib/config';
 import { getT } from '@/lib/i18n';
+import { hasProfileContact } from '@/lib/contact-platform';
 import LoginForm from './LoginForm';
 
 export default async function LoginPage({
@@ -20,12 +21,12 @@ export default async function LoginPage({
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('wechat_id')
+      .select('wechat_id, contact_platform, contact_id')
       .eq('id', user.id)
       .single();
-    const wechatEmpty =
-      profile?.wechat_id == null || String(profile?.wechat_id ?? '').trim() === '';
-    if (wechatEmpty) redirect(`/profile/setup?redirect=${encodeURIComponent(goTo)}`);
+    if (!hasProfileContact(profile)) {
+      redirect(`/profile/setup?redirect=${encodeURIComponent(goTo)}`);
+    }
     redirect(goTo);
   }
 

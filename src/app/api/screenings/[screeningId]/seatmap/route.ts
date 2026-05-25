@@ -52,7 +52,7 @@ export async function GET(
       .single(),
     admin
       .from('reservations')
-      .select('id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, friend_avatar, attended, created_at, profiles(display_name, avatar_config, wechat_id, no_show_count)')
+      .select('id, seat_key, user_id, is_squeezed, is_ghost, ghost_name, ghost_avatar, friend_avatar, attended, created_at, profiles(display_name, avatar_config, wechat_id, contact_platform, contact_id, no_show_count)')
       .eq('screening_id', screeningId),
     admin
       .from('waitlist')
@@ -92,7 +92,14 @@ export async function GET(
       }
     : null;
 
-  type ProfileRow = { display_name: string | null; avatar_config: unknown; wechat_id?: string | null; no_show_count?: number | null };
+  type ProfileRow = {
+    display_name: string | null;
+    avatar_config: unknown;
+    wechat_id?: string | null;
+    contact_platform?: string | null;
+    contact_id?: string | null;
+    no_show_count?: number | null;
+  };
   const reservationList: Array<Record<string, unknown> & { user_id?: string | null; profiles?: ProfileRow | ProfileRow[] | null }> = reservations ?? [];
   const userIds = Array.from(
     new Set(
@@ -112,7 +119,11 @@ export async function GET(
           avatar_config: p.avatar_config,
           no_show_count: p.no_show_count ?? 0,
           attendance_count: attendanceMap.get(uid) ?? 0,
-          ...(isAdmin && { wechat_id: p.wechat_id ?? null }),
+          ...(isAdmin && {
+            wechat_id: p.wechat_id ?? null,
+            contact_platform: p.contact_platform ?? 'wechat',
+            contact_id: p.contact_id ?? p.wechat_id ?? null,
+          }),
         }
       : null;
     const { profiles: _drop, ...rest } = row;
