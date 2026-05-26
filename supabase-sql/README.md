@@ -46,6 +46,29 @@ All database schema and migrations for ZiggyGraph / Sofa Salon. Run in **Supabas
 | 34 | `34-profiles-reset-no-show-counts.sql` | Resets `no_show_count` and `consecutive_attendances` to 0 for all profiles. |
 | — | `31-attended-present-normalize.sql` | **One-time data:** `attended=true` → `null`. Run once if upgrading from tri-state marks. |
 | 35 | `35-reservations-attended-check.sql` | `CHECK`: `attended` is only `NULL` (present) or `false` (no-show). Run after normalize. |
+| 36 | `36-screenings-catalog-archive.sql` | RLS: authenticated users can read past `screenings` (`screening_at < now()`). |
+| 37 | `37-seed-historical-screenings-catalog.sql` | Sheet seed (273 rows) + fill empty `title`/`title_en` on existing same-night rows. Regenerate: `node scripts/generate-historical-screenings-sql.mjs`. |
+
+### First-time: past screenings + sheet sync (36 → 37)
+
+You have **not** run these yet. In **Supabase → SQL Editor**, in order:
+
+1. **`36-screenings-catalog-archive.sql`** — one RLS policy only. No new tables. Lets logged-in users search/claim **any** past row in `screenings` (site-created or sheet).
+
+2. **`37-seed-historical-screenings-catalog.sql`** — two steps in one file:
+   - **(A)** Inserts 273 past screenings from the Google Sheet CSV (`is_active = false`; normal `screenings` rows, not a separate catalog table).
+   - **(B)** For screenings **already on your site** on the same NY date + release year as the sheet, fills **only** empty `title` / `title_en` from the sheet (Letterboxd-matched English). Rows that already have **both** names (e.g. 蒙巴纳斯 + Montparnasse) are **not** overwritten.
+   - **(C)** Any row with `title` like `女孩们都很好 Las chicas están bien` is split: Chinese → `title`, Latin suffix → `title_en` (all such rows, not just one film).
+
+Does **not** change `screening_at`, directors, reservations, or attendance.
+
+Safe to re-run **37** after editing the CSV (regenerate the file first with `node scripts/generate-historical-screenings-sql.mjs`).
+
+**Already ran 37 and see duplicate past screenings in 补登?** Run **`40-remove-sheet-seed-duplicates.sql`** once (then re-run **37** if needed).
+
+**Already ran 37 before part (C) existed?** Run `node scripts/normalize-bilingual-screening-titles.mjs` once (same split logic).
+
+**Do not run** old `38` / `39` if present — that logic is merged into **37**.
 
 ## New environment setup
 
