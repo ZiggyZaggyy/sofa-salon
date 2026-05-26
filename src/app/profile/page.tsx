@@ -219,6 +219,20 @@ export default async function ProfilePage() {
             }}
           />
         </section>
+        <section className="mt-8 border border-[#2a2a2a] p-4" style={{ borderRadius: 0 }}>
+          <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#e8c84a] mb-2">
+            {t.historyCatalog.title}
+          </p>
+          <p className="font-mono text-[12px] text-[#888888] mb-3 leading-relaxed">
+            {t.historyCatalog.intro}
+          </p>
+          <a
+            href="/profile/history"
+            className="inline-block font-mono text-[10px] tracking-[0.2em] uppercase text-[#e8c84a] hover:underline"
+          >
+            {t.historyCatalog.registerPastLink}
+          </a>
+        </section>
         <WatchHistory items={pastScreenings} />
       </div>
     </div>
