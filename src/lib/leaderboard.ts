@@ -14,9 +14,24 @@ export type LeaderboardRow = {
 export type UserLeaderboardStanding = {
   rank: number;
   attendanceCount: number;
-  /** True when viewer is admin (e.g. host); not ranked on the public board. */
+  /** Non-admin profiles (registered guests eligible for the public board). */
+  totalRegisteredGuests: number;
+  /** True when viewer is admin: rank 0 in standing; omitted from the table below. */
   excludedFromLeaderboard: boolean;
 };
+
+/** Count of registered guest profiles (excludes admins). */
+export async function fetchRegisteredGuestCount(client: SupabaseClient): Promise<number> {
+  const { count, error } = await client
+    .from('profiles')
+    .select('id', { count: 'exact', head: true })
+    .eq('is_admin', false);
+  if (error) {
+    console.error('[leaderboard] profile count:', error.message);
+    return 0;
+  }
+  return count ?? 0;
+}
 
 async function fetchAdminUserIds(client: SupabaseClient): Promise<Set<string>> {
   const { data, error } = await client.from('profiles').select('id').eq('is_admin', true);
@@ -129,19 +144,27 @@ export async function fetchUserLeaderboardRank(
   userId: string
 ): Promise<UserLeaderboardStanding> {
   const adminIds = await fetchAdminUserIds(client);
-  const attendanceCount = await fetchAttendanceCountForUser(client, userId);
+  const [attendanceCount, eligible, totalRegisteredGuests] = await Promise.all([
+    fetchAttendanceCountForUser(client, userId),
+    fetchEligibleLeaderboardCounts(client),
+    fetchRegisteredGuestCount(client),
+  ]);
 
   if (adminIds.has(userId)) {
-    return { rank: 0, attendanceCount, excludedFromLeaderboard: true };
+    return {
+      rank: 0,
+      attendanceCount,
+      totalRegisteredGuests,
+      excludedFromLeaderboard: true,
+    };
   }
-
-  const eligible = await fetchEligibleLeaderboardCounts(client);
 
   if (attendanceCount <= 0) {
     const withPositive = eligible.filter((c) => c.attendance_count > 0).length;
     return {
       rank: withPositive + 1,
       attendanceCount: 0,
+      totalRegisteredGuests,
       excludedFromLeaderboard: false,
     };
   }
@@ -150,6 +173,7 @@ export async function fetchUserLeaderboardRank(
   return {
     rank: higher + 1,
     attendanceCount,
+    totalRegisteredGuests,
     excludedFromLeaderboard: false,
   };
 }

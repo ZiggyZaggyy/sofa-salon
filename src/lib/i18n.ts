@@ -35,7 +35,7 @@ export const tEn = {
   leaderboard: {
     title: 'Leaderboard',
     yourStats: 'Your standing',
-    yourRank: 'Rank #{n}',
+    yourRank: 'Rank #{n} of {total} guests',
     attendanceCount: '{n} screenings',
     screenings: 'Count',
     badge: 'Badge',
@@ -454,7 +454,7 @@ export const tZh = {
   leaderboard: {
     title: '排行榜',
     yourStats: '你的数据',
-    yourRank: '排名 #{n}',
+    yourRank: '排名 #{n} / 共 {total} 位观众',
     attendanceCount: '{n} 场',
     screenings: '场次',
     badge: '徽章',

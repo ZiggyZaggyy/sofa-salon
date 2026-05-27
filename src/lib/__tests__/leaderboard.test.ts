@@ -3,6 +3,7 @@ import {
   leaderboardRankAtIndex,
   selectLeaderboardCutoff,
 } from '../leaderboard';
+import { tEn } from '../i18n';
 
 describe('LEADERBOARD_TOP_N', () => {
   it('defaults to 10 places', () => {
@@ -55,6 +56,20 @@ describe('selectLeaderboardCutoff', () => {
   it('returns exactly minPlaces when no tie at cutoff', () => {
     const noTie = rows.filter((r) => r.user_id !== '11' && r.user_id !== '12');
     expect(selectLeaderboardCutoff(noTie, 10)).toHaveLength(10);
+  });
+});
+
+describe('yourRank copy', () => {
+  it('includes rank and total guest placeholders', () => {
+    const line = tEn.leaderboard.yourRank
+      .replace('{n}', '12')
+      .replace('{total}', '200');
+    expect(line).toBe('Rank #12 of 200 guests');
+  });
+
+  it('shows rank 0 for admin standing copy', () => {
+    const line = tEn.leaderboard.yourRank.replace('{n}', '0').replace('{total}', '50');
+    expect(line).toBe('Rank #0 of 50 guests');
   });
 });
 
