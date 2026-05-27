@@ -83,9 +83,11 @@ export default async function LeaderboardPage() {
                 />
               )}
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[#e8e4dc] text-[14px]">
-                {!you.excludedFromLeaderboard ? (
-                  <span>{t.leaderboard.yourRank.replace('{n}', String(you.rank))}</span>
-                ) : null}
+                <span>
+                  {t.leaderboard.yourRank
+                    .replace('{n}', String(you.rank))
+                    .replace('{total}', String(you.totalRegisteredGuests))}
+                </span>
                 <span className="text-[#888888]">
                   {t.leaderboard.attendanceCount.replace('{n}', String(you.attendanceCount))}
                 </span>
