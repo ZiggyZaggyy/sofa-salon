@@ -17,11 +17,41 @@ export const APP_NAME_PARTS = APP_NAME.split(' ');
 /**
  * Public site URL for links shared with guests (WeChat announcements, email profile links).
  * Not used for auth callback redirects (those follow the request host / NEXT_PUBLIC_APP_URL).
- * Override for staging: NEXT_PUBLIC_CUSTOMER_SITE_URL
+ * Production deployments should set NEXT_PUBLIC_CUSTOMER_SITE_URL explicitly.
  */
 export const CUSTOMER_SITE_ORIGIN = (
-  process.env.NEXT_PUBLIC_CUSTOMER_SITE_URL?.trim() || 'https://ziggygraph.app'
+  process.env.NEXT_PUBLIC_CUSTOMER_SITE_URL?.trim() ||
+  process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+  'http://localhost:3000'
 ).replace(/\/$/, '');
+
+/** Locale-specific archive links shown in the main navigation. */
+export const PAST_SCREENINGS_URL_EN =
+  process.env.NEXT_PUBLIC_PAST_SCREENINGS_URL_EN?.trim() ||
+  'https://letterboxd.com/ziggyzaggy/list/ziggygraph-screened/';
+export const PAST_SCREENINGS_URL_ZH =
+  process.env.NEXT_PUBLIC_PAST_SCREENINGS_URL_ZH?.trim() ||
+  'https://docs.google.com/spreadsheets/d/1lrEE5G72IrhtxurPoYcLOJP2YKwGXGduKA44nYsjQ-M/';
+
+/** Public attribution shown in navigation and the help chatbot. */
+export const DEVELOPER_NAME =
+  process.env.NEXT_PUBLIC_DEVELOPER_NAME?.trim() || 'Eve';
+export const DEVELOPER_URL =
+  process.env.NEXT_PUBLIC_DEVELOPER_URL?.trim() || 'https://eveshi.com/';
+
+/** Host and venue identity used by help text and exported receipts. */
+export const HOST_NAME = process.env.NEXT_PUBLIC_HOST_NAME?.trim() || 'Ziggy';
+export const VENUE_ADDRESS = process.env.NEXT_PUBLIC_VENUE_ADDRESS?.trim() ?? '';
+export const RECEIPT_SUBTITLE =
+  process.env.NEXT_PUBLIC_RECEIPT_SUBTITLE?.trim() || 'SCREENING ROOM';
+
+/** Optional mascot easter-egg links. Set either value to an empty string to disable it. */
+export const MASCOT_STORY_URL =
+  process.env.NEXT_PUBLIC_MASCOT_STORY_URL?.trim() ??
+  'https://youtube.com/shorts/Gd5YJUGlOdg';
+export const MASCOT_STORY_EMBED_URL =
+  process.env.NEXT_PUBLIC_MASCOT_STORY_EMBED_URL?.trim() ??
+  'https://www.youtube.com/embed/Gd5YJUGlOdg';
 
 /**
  * Salon host on the leaderboard: rank #0 in standing, hidden from the public table.

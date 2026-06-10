@@ -5,7 +5,14 @@ import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { APP_NAME_PARTS, APP_TAGLINE } from '@/lib/config';
+import {
+  APP_NAME_PARTS,
+  APP_TAGLINE,
+  DEVELOPER_NAME,
+  DEVELOPER_URL,
+  PAST_SCREENINGS_URL_EN,
+  PAST_SCREENINGS_URL_ZH,
+} from '@/lib/config';
 import { useLocale } from '@/components/LocaleProvider';
 import AvatarSVG from '@/components/AvatarSVG';
 import PigeonIcon from '@/components/PigeonIcon';
@@ -95,7 +102,7 @@ export default function NavBar() {
     }`;
 
   const pastScreeningsNavLink = (extraClass = '', onNavigate?: () => void) => {
-    const href = t.nav.pastScreeningsHref;
+    const href = locale === 'zh' ? PAST_SCREENINGS_URL_ZH : PAST_SCREENINGS_URL_EN;
     const isExternal = href.startsWith('http://') || href.startsWith('https://');
     const className = linkClass(!isExternal && !!pathname?.startsWith(href)) + extraClass;
     if (isExternal) {
@@ -182,12 +189,12 @@ export default function NavBar() {
                 {t.nav.contactHost}
               </Link>
               <a
-                href={t.nav.developedByHref}
+                href={DEVELOPER_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={linkClass(false)}
               >
-                {t.nav.developedBy}
+                {t.nav.developedBy.replace('{name}', DEVELOPER_NAME)}
               </a>
               <Link href="/profile" className={linkClass(!!pathname?.startsWith('/profile'))}>
                 {t.nav.profile}
@@ -253,13 +260,13 @@ export default function NavBar() {
                       {t.nav.contactHost}
                     </Link>
                     <a
-                      href={t.nav.developedByHref}
+                      href={DEVELOPER_URL}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={linkClass(false) + ' px-4'}
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      {t.nav.developedBy}
+                      {t.nav.developedBy.replace('{name}', DEVELOPER_NAME)}
                     </a>
                     <Link
                       href="/profile"
@@ -304,12 +311,12 @@ export default function NavBar() {
                 {t.nav.contactHost}
               </Link>
               <a
-                href={t.nav.developedByHref}
+                href={DEVELOPER_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={linkClass(false)}
               >
-                {t.nav.developedBy}
+                {t.nav.developedBy.replace('{name}', DEVELOPER_NAME)}
               </a>
               <Link
                 href="/auth/login"
@@ -367,13 +374,13 @@ export default function NavBar() {
                       {t.nav.contactHost}
                     </Link>
                     <a
-                      href={t.nav.developedByHref}
+                      href={DEVELOPER_URL}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={linkClass(false) + ' px-4'}
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      {t.nav.developedBy}
+                      {t.nav.developedBy.replace('{name}', DEVELOPER_NAME)}
                     </a>
                     <Link
                       href="/auth/login"
