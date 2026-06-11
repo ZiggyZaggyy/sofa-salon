@@ -100,7 +100,7 @@ git push -u origin main
 | `NEXT_PUBLIC_PAST_SCREENINGS_URL_ZH` | 否 | 中文界面的往期放映链接 |
 | `NEXT_PUBLIC_DEVELOPER_NAME` | 否 | 导航栏显示的开发者名称 |
 | `NEXT_PUBLIC_DEVELOPER_URL` | 否 | 开发者主页链接 |
-| `NEXT_PUBLIC_HOST_NAME` | 否 | 观影小票显示的主理人名称 |
+| `NEXT_PUBLIC_HOST_NAME` | 否 | FAQ 主理人引用与观影小票显示的名称 |
 | `NEXT_PUBLIC_VENUE_ADDRESS` | 否 | 观影小票显示的场地地址；留空则隐藏 |
 | `NEXT_PUBLIC_RECEIPT_SUBTITLE` | 否 | 观影小票副标题 |
 

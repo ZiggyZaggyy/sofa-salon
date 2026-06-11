@@ -39,7 +39,7 @@ export const DEVELOPER_NAME =
 export const DEVELOPER_URL =
   process.env.NEXT_PUBLIC_DEVELOPER_URL?.trim() || 'https://eveshi.com/';
 
-/** Host and venue identity used by exported receipts. */
+/** Host and venue identity used by help text and exported receipts. */
 export const HOST_NAME = process.env.NEXT_PUBLIC_HOST_NAME?.trim() || 'Ziggy';
 export const VENUE_ADDRESS = process.env.NEXT_PUBLIC_VENUE_ADDRESS?.trim() ?? '';
 export const RECEIPT_SUBTITLE =
