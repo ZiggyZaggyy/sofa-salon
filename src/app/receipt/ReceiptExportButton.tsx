@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { APP_NAME } from '@/lib/config';
 
 function isMobileExport(): boolean {
   if (typeof window === 'undefined') return false;
@@ -22,7 +23,8 @@ export default function ReceiptExportButton() {
       });
       const res = await fetch(dataUrl);
       const blob = await res.blob();
-      const fileName = `ziggy-receipt-${new Date().toISOString().slice(0, 10)}.png`;
+      const appSlug = APP_NAME.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const fileName = `${appSlug || 'screening'}-receipt-${new Date().toISOString().slice(0, 10)}.png`;
       const file = new File([blob], fileName, { type: 'image/png' });
 
       if (isMobileExport() && typeof navigator !== 'undefined' && navigator.share) {
@@ -30,7 +32,7 @@ export default function ReceiptExportButton() {
           if (navigator.canShare?.({ files: [file] })) {
             await navigator.share({
               files: [file],
-              title: 'Ziggy receipt',
+              title: `${APP_NAME} receipt`,
             });
             return;
           }

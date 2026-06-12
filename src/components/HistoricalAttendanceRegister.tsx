@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale } from '@/components/LocaleProvider';
 import { MAX_CLAIM_SCREENINGS_PER_REQUEST } from '@/lib/historical-catalog';
 import { shouldShowChineseTitleInEnSubtitle } from '@/lib/historical-catalog-ui';
+import { SALON_NAME } from '@/lib/config';
 
 type CatalogItem = {
   id: string;
@@ -257,7 +258,7 @@ export default function HistoricalAttendanceRegister() {
   return (
     <div className="space-y-4">
       <p className="font-mono text-[12px] text-[#888888] leading-relaxed">
-        {t.historyCatalog.intro}
+        {t.historyCatalog.intro.replace('{salonName}', SALON_NAME)}
       </p>
 
       <input

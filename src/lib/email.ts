@@ -17,7 +17,7 @@ function getResend(): Resend | null {
 /** Production: set `EMAIL_FROM` to an address on your Resend-verified sending domain. */
 const FROM = process.env.EMAIL_FROM ?? 'onboarding@resend.dev';
 
-/** Venue name for all emails (e.g. "Ziggy Graph"). From env so users know who the email is from. */
+/** Venue name for all emails (e.g. "Film Club"). From env so users know who the email is from. */
 function getVenueName(): string {
   return process.env.NEXT_PUBLIC_APP_NAME || 'Sofa Salon';
 }

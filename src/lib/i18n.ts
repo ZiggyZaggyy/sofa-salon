@@ -27,10 +27,8 @@ export const tEn = {
     signIn: 'Sign in',
     logOut: 'Log out',
     pastScreenings: 'Past Screenings',
-    pastScreeningsHref: 'https://letterboxd.com/ziggyzaggy/list/ziggygraph-screened/',
     leaderboard: 'Leaderboard',
-    developedBy: 'Developed by: Eve',
-    developedByHref: 'https://eveshi.com/',
+    developedBy: 'Developed by: {name}',
     contactHost: 'Message host',
   },
   hostContact: {
@@ -74,7 +72,7 @@ export const tEn = {
   historyCatalog: {
     title: 'Past screenings',
     intro:
-      'Add past screenings you attended at Ziggygraph (including ones you booked on this site). Each one counts toward your badge.',
+      'Add past screenings you attended at {salonName} (including ones you booked on this site). Each one counts toward your badge.',
     searchPlaceholder: 'Search title or director (prefix)…',
     selectAllVisible: 'Select all shown',
     clearSelection: 'Clear',
@@ -472,11 +470,8 @@ export const tZh = {
     signIn: '登录',
     logOut: '退出',
     pastScreenings: '往期放映',
-    pastScreeningsHref:
-      'https://docs.google.com/spreadsheets/d/1lrEE5G72IrhtxurPoYcLOJP2YKwGXGduKA44nYsjQ-M/',
     leaderboard: '排行榜',
-    developedBy: '开发者：471',
-    developedByHref: 'https://eveshi.com/',
+    developedBy: '开发者：{name}',
     contactHost: '联系主理人',
   },
   hostContact: {
@@ -518,7 +513,7 @@ export const tZh = {
   },
   historyCatalog: {
     title: '往期放映',
-    intro: '补登在 Ziggygraph 参加过的往期场次（含在本站订过票的场次），计入徽章出席次数。',
+    intro: '补登在「{salonName}」参加过的往期场次（含在本站订过票的场次），计入徽章出席次数。',
     searchPlaceholder: '搜索片名或导演（前缀匹配）…',
     selectAllVisible: '全选当前列表',
     clearSelection: '清空选择',

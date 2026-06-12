@@ -60,7 +60,7 @@ This app is designed to run against **your** infrastructure — do not point a p
 2. **Auth** — Enable Google (or other providers) in Supabase; set Site URL and redirect URLs to your app origin.
 3. **Resend (optional)** — Sign up at [resend.com](https://resend.com), verify a sending domain, then set `RESEND_API_KEY` and `EMAIL_FROM`. Without Resend, bookings still work; confirmation/reminder emails are skipped.
 4. **Host contact (optional)** — Set `HOST_CONTACT_EMAIL` for the `/contact` form.
-5. **Branding** — Override `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_APP_TAGLINE`, and nav links in `src/lib/i18n.ts` for your salon.
+5. **Branding** — Override the `NEXT_PUBLIC_*` display and identity variables in `.env.local`; no source edits are required. This includes the app/salon name, tagline, locale-specific past-screening links, navigation attribution, host references, and receipt venue details. Optional links and attribution are hidden when unset.
 
 Deploy the Next.js app (e.g. Vercel) with the same env vars. Use a **separate** Supabase project for staging vs production.
 
@@ -193,7 +193,7 @@ See **`TESTING.md`** for each file's scope and how to add tests.
 
 1. Connect the repo; add the same env vars as `.env.local` (never commit `.env.local`).
 2. Build: `npm run build`.
-3. Set `NEXT_PUBLIC_APP_URL` to the deployed URL if OAuth or email links need it.
+3. Set `NEXT_PUBLIC_CUSTOMER_SITE_URL` to the deployed URL for links in emails, calendars, and group announcements. `NEXT_PUBLIC_APP_URL` remains the auth callback fallback.
 
 ### 6.2 Supabase (production)
 
@@ -208,7 +208,7 @@ See **`TESTING.md`** for each file's scope and how to add tests.
 
 ## 7. Code and conventions
 
-- **App name / tagline:** Only in `src/lib/config.ts`; do not hardcode elsewhere.
+- **Deployment identity:** Define app, archive, navigation attribution, host references, and receipt values through `.env.local`; `src/lib/config.ts` is the single source of truth.
 - **Env:** Use `process.env.*`; only `NEXT_PUBLIC_*` is available in the browser.
 - **Naming:** Prefer clear names (`screeningId`, `userId`, `seatKey`).
 - **SQL:** Single source of truth in `supabase-sql/`; run in numeric order.

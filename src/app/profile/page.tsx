@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { APP_NAME_PARTS } from '@/lib/config';
+import { APP_NAME_PARTS, SALON_NAME } from '@/lib/config';
 import { getT, type Locale } from '@/lib/i18n';
 import { getBadgeLevel } from '@/lib/badges';
 import { jsonToConfig } from '@/lib/avatar';
@@ -224,7 +224,7 @@ export default async function ProfilePage() {
             {t.historyCatalog.title}
           </p>
           <p className="font-mono text-[12px] text-[#888888] mb-3 leading-relaxed">
-            {t.historyCatalog.intro}
+            {t.historyCatalog.intro.replace('{salonName}', SALON_NAME)}
           </p>
           <a
             href="/profile/history"
