@@ -51,6 +51,8 @@ describe('getT', () => {
     expect(getT('zh').nav.pastScreenings).toBe('往期放映');
     expect(getT('en').nav.developedBy).toContain('{name}');
     expect(getT('zh').nav.developedBy).toContain('{name}');
+    expect(getT('en').historyCatalog.intro).toContain('{salonName}');
+    expect(getT('zh').historyCatalog.intro).toContain('{salonName}');
   });
 
   it('returns admin ticker keys for both locales', () => {

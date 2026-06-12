@@ -96,11 +96,12 @@ git push -u origin main
 | `NEXT_PUBLIC_APP_URL` | 否 | 兜底 origin（极少用）；Auth 回调优先用用户实际访问的域名，见 `docs/GOOGLE_AUTH_SETUP.md` |
 | `NEXT_PUBLIC_APP_NAME` | 否 | 应用名称，默认 "Sofa Salon" |
 | `NEXT_PUBLIC_APP_TAGLINE` | 否 | 副标题，默认 "Your host's living room" |
-| `NEXT_PUBLIC_PAST_SCREENINGS_URL_EN` | 否 | 英文界面的往期放映链接 |
-| `NEXT_PUBLIC_PAST_SCREENINGS_URL_ZH` | 否 | 中文界面的往期放映链接 |
-| `NEXT_PUBLIC_DEVELOPER_NAME` | 否 | 导航栏显示的开发者名称 |
-| `NEXT_PUBLIC_DEVELOPER_URL` | 否 | 开发者主页链接 |
-| `NEXT_PUBLIC_HOST_NAME` | 否 | FAQ 主理人引用与观影小票显示的名称 |
+| `NEXT_PUBLIC_SALON_NAME` | 否 | 描述文案中的社群/放映空间名称；默认使用 `NEXT_PUBLIC_APP_NAME` |
+| `NEXT_PUBLIC_PAST_SCREENINGS_URL_EN` | 否 | 英文界面的往期放映链接；未设置时隐藏 |
+| `NEXT_PUBLIC_PAST_SCREENINGS_URL_ZH` | 否 | 中文界面的往期放映链接；未设置时隐藏 |
+| `NEXT_PUBLIC_DEVELOPER_NAME` | 否 | 导航栏显示的开发者名称；未设置时隐藏署名 |
+| `NEXT_PUBLIC_DEVELOPER_URL` | 否 | 开发者主页链接；名称存在但链接为空时显示为纯文本 |
+| `NEXT_PUBLIC_HOST_NAME` | 否 | FAQ 主理人引用与观影小票显示的名称；未设置时 FAQ 使用通用称呼、小票不显示 |
 | `NEXT_PUBLIC_VENUE_ADDRESS` | 否 | 观影小票显示的场地地址；留空则隐藏 |
 | `NEXT_PUBLIC_RECEIPT_SUBTITLE` | 否 | 观影小票副标题 |
 

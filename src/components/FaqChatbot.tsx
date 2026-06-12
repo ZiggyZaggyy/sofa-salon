@@ -6,6 +6,14 @@ import { useLocale } from '@/components/LocaleProvider';
 import PigeonHead from '@/components/PigeonHead';
 import { HOST_NAME } from '@/lib/config';
 
+const HOST_CONTACT_ZH = HOST_NAME ? `请联系 ${HOST_NAME}` : '请联系主理人';
+const HOST_CONFIRM_ZH = HOST_NAME
+  ? `请联系 ${HOST_NAME} 确认情况。`
+  : '请联系主理人确认情况。';
+const HOST_CONFIRM_EN = HOST_NAME
+  ? `Please contact ${HOST_NAME} to confirm.`
+  : 'Please contact the host to confirm.';
+
 type StateId =
   | 'ROOT'
   | 'RULES'
@@ -184,13 +192,13 @@ const STATES: Record<StateId, State> = {
       '如果你的座位不见了，可能是：',
       '• 管理员取消了这场放映',
       '• 你的预约因故被移除',
-      `请联系 ${HOST_NAME} 确认情况。`,
+      HOST_CONFIRM_ZH,
     ],
     messages_en: [
       'If your seat is gone, it may be because:',
       '• The host cancelled this screening',
       '• Your booking was removed for some reason',
-      `Please contact ${HOST_NAME} to confirm.`,
+      HOST_CONFIRM_EN,
     ],
     options: [{ label_zh: '返回主菜单', label_en: 'Back to menu', next: 'ROOT' }],
   },
@@ -219,12 +227,12 @@ const STATES: Record<StateId, State> = {
     messages_zh: [
       '具体地址会在放映前发送给所有已报名者。',
       '请检查你的邮件和微信。',
-      `如果没收到，请联系 ${HOST_NAME}。`,
+      `如果没收到，${HOST_CONTACT_ZH}。`,
     ],
     messages_en: [
       'The address will be sent to all registered attendees before the screening.',
       'Check your email and WeChat.',
-      `If you don’t get it, contact ${HOST_NAME}.`,
+      `If you don’t get it, contact ${HOST_NAME || 'the host'}.`,
     ],
     options: [{ label_zh: '返回主菜单', label_en: 'Back to menu', next: 'ROOT' }],
   },

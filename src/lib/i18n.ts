@@ -72,7 +72,7 @@ export const tEn = {
   historyCatalog: {
     title: 'Past screenings',
     intro:
-      'Add past screenings you attended at this salon (including ones you booked on this site). Each one counts toward your badge.',
+      'Add past screenings you attended at {salonName} (including ones you booked on this site). Each one counts toward your badge.',
     searchPlaceholder: 'Search title or director (prefix)…',
     selectAllVisible: 'Select all shown',
     clearSelection: 'Clear',
@@ -513,7 +513,7 @@ export const tZh = {
   },
   historyCatalog: {
     title: '往期放映',
-    intro: '补登在本放映空间参加过的往期场次（含在本站订过票的场次），计入徽章出席次数。',
+    intro: '补登在「{salonName}」参加过的往期场次（含在本站订过票的场次），计入徽章出席次数。',
     searchPlaceholder: '搜索片名或导演（前缀匹配）…',
     selectAllVisible: '全选当前列表',
     clearSelection: '清空选择',

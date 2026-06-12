@@ -103,6 +103,7 @@ export default function NavBar() {
 
   const pastScreeningsNavLink = (extraClass = '', onNavigate?: () => void) => {
     const href = locale === 'zh' ? PAST_SCREENINGS_URL_ZH : PAST_SCREENINGS_URL_EN;
+    if (!href) return null;
     const isExternal = href.startsWith('http://') || href.startsWith('https://');
     const className = linkClass(!isExternal && !!pathname?.startsWith(href)) + extraClass;
     if (isExternal) {
@@ -122,6 +123,26 @@ export default function NavBar() {
       <Link href={href} className={className} onClick={onNavigate}>
         {t.nav.pastScreenings}
       </Link>
+    );
+  };
+
+  const developerNavLink = (extraClass = '', onNavigate?: () => void) => {
+    if (!DEVELOPER_NAME) return null;
+    const className = linkClass(false) + extraClass;
+    const label = t.nav.developedBy.replace('{name}', DEVELOPER_NAME);
+    if (!DEVELOPER_URL) {
+      return <span className={className}>{label}</span>;
+    }
+    return (
+      <a
+        href={DEVELOPER_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+        onClick={onNavigate}
+      >
+        {label}
+      </a>
     );
   };
 
@@ -188,14 +209,7 @@ export default function NavBar() {
               <Link href="/contact" className={linkClass(!!pathname?.startsWith('/contact'))}>
                 {t.nav.contactHost}
               </Link>
-              <a
-                href={DEVELOPER_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={linkClass(false)}
-              >
-                {t.nav.developedBy.replace('{name}', DEVELOPER_NAME)}
-              </a>
+              {developerNavLink()}
               <Link href="/profile" className={linkClass(!!pathname?.startsWith('/profile'))}>
                 {t.nav.profile}
               </Link>
@@ -259,15 +273,7 @@ export default function NavBar() {
                     >
                       {t.nav.contactHost}
                     </Link>
-                    <a
-                      href={DEVELOPER_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={linkClass(false) + ' px-4'}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {t.nav.developedBy.replace('{name}', DEVELOPER_NAME)}
-                    </a>
+                    {developerNavLink(' px-4', () => setMobileMenuOpen(false))}
                     <Link
                       href="/profile"
                       className={linkClass(!!pathname?.startsWith('/profile')) + ' px-4'}
@@ -310,14 +316,7 @@ export default function NavBar() {
               <Link href="/contact" className={linkClass(!!pathname?.startsWith('/contact'))}>
                 {t.nav.contactHost}
               </Link>
-              <a
-                href={DEVELOPER_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={linkClass(false)}
-              >
-                {t.nav.developedBy.replace('{name}', DEVELOPER_NAME)}
-              </a>
+              {developerNavLink()}
               <Link
                 href="/auth/login"
                 className="bg-[#e8c84a] text-[#0f0f0f] font-mono text-[10px] tracking-[0.2em] uppercase py-3 px-6 min-h-[44px] flex items-center hover:opacity-85 active:scale-[0.97] transition-all"
@@ -373,15 +372,7 @@ export default function NavBar() {
                     >
                       {t.nav.contactHost}
                     </Link>
-                    <a
-                      href={DEVELOPER_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={linkClass(false) + ' px-4'}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {t.nav.developedBy.replace('{name}', DEVELOPER_NAME)}
-                    </a>
+                    {developerNavLink(' px-4', () => setMobileMenuOpen(false))}
                     <Link
                       href="/auth/login"
                       className="block mx-3 mt-1 mb-1 bg-[#e8c84a] text-[#0f0f0f] font-mono text-[10px] tracking-[0.2em] uppercase py-3 px-4 text-center hover:opacity-85 active:scale-[0.97] transition-all"

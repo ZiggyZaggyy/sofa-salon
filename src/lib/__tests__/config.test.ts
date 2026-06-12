@@ -12,6 +12,7 @@ import {
   PAST_SCREENINGS_URL_EN,
   PAST_SCREENINGS_URL_ZH,
   RECEIPT_SUBTITLE,
+  SALON_NAME,
   VENUE_ADDRESS,
 } from '../config';
 
@@ -33,12 +34,13 @@ describe('config', () => {
     expect(APP_NAME_PARTS.every((p) => p.length > 0)).toBe(true);
   });
 
-  it('keeps the current deployment identity as backwards-compatible defaults', () => {
-    expect(PAST_SCREENINGS_URL_EN).toContain('letterboxd.com');
-    expect(PAST_SCREENINGS_URL_ZH).toContain('docs.google.com/spreadsheets');
-    expect(DEVELOPER_NAME).toBe('Eve');
-    expect(DEVELOPER_URL).toBe('https://eveshi.com/');
-    expect(HOST_NAME).toBe('Ziggy');
+  it('uses neutral deployment identity defaults', () => {
+    expect(SALON_NAME).toBe(APP_NAME);
+    expect(PAST_SCREENINGS_URL_EN).toBe('');
+    expect(PAST_SCREENINGS_URL_ZH).toBe('');
+    expect(DEVELOPER_NAME).toBe('');
+    expect(DEVELOPER_URL).toBe('');
+    expect(HOST_NAME).toBe('');
     expect(VENUE_ADDRESS).toBe('');
     expect(RECEIPT_SUBTITLE).toBe('SCREENING ROOM');
   });
@@ -49,13 +51,22 @@ describe('isLeaderboardHostDisplayName', () => {
     delete process.env.LEADERBOARD_HOST_DISPLAY_NAMES;
   });
 
-  it('matches default host Ziggy but not co-admin 471', () => {
+  it('does not exclude any leaderboard name by default', () => {
     jest.isolateModules(() => {
       delete process.env.LEADERBOARD_HOST_DISPLAY_NAMES;
       const mod = require('../config') as typeof import('../config');
-      expect(mod.isLeaderboardHostDisplayName('Ziggy')).toBe(true);
-      expect(mod.isLeaderboardHostDisplayName('ziggy')).toBe(true);
+      expect(mod.isLeaderboardHostDisplayName('Host')).toBe(false);
       expect(mod.isLeaderboardHostDisplayName('471')).toBe(false);
+    });
+  });
+
+  it('matches configured host display names case-insensitively', () => {
+    jest.isolateModules(() => {
+      process.env.LEADERBOARD_HOST_DISPLAY_NAMES = 'Host One, Host Two';
+      const mod = require('../config') as typeof import('../config');
+      expect(mod.isLeaderboardHostDisplayName('host one')).toBe(true);
+      expect(mod.isLeaderboardHostDisplayName('HOST TWO')).toBe(true);
+      expect(mod.isLeaderboardHostDisplayName('Guest')).toBe(false);
     });
   });
 });
@@ -95,6 +106,7 @@ describe('CUSTOMER_SITE_ORIGIN', () => {
 
 describe('deployment identity overrides', () => {
   const keys = [
+    'NEXT_PUBLIC_SALON_NAME',
     'NEXT_PUBLIC_PAST_SCREENINGS_URL_EN',
     'NEXT_PUBLIC_PAST_SCREENINGS_URL_ZH',
     'NEXT_PUBLIC_DEVELOPER_NAME',
@@ -110,6 +122,7 @@ describe('deployment identity overrides', () => {
 
   it('uses public environment variables for fork-specific identity', () => {
     jest.isolateModules(() => {
+      process.env.NEXT_PUBLIC_SALON_NAME = 'Example Film Club';
       process.env.NEXT_PUBLIC_PAST_SCREENINGS_URL_EN = 'https://example.com/archive/en';
       process.env.NEXT_PUBLIC_PAST_SCREENINGS_URL_ZH = 'https://example.com/archive/zh';
       process.env.NEXT_PUBLIC_DEVELOPER_NAME = 'Example Dev';
@@ -119,6 +132,7 @@ describe('deployment identity overrides', () => {
       process.env.NEXT_PUBLIC_RECEIPT_SUBTITLE = 'FILM CLUB';
       const mod = require('../config') as typeof import('../config');
 
+      expect(mod.SALON_NAME).toBe('Example Film Club');
       expect(mod.PAST_SCREENINGS_URL_EN).toBe('https://example.com/archive/en');
       expect(mod.PAST_SCREENINGS_URL_ZH).toBe('https://example.com/archive/zh');
       expect(mod.DEVELOPER_NAME).toBe('Example Dev');

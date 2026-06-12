@@ -3,7 +3,7 @@
  */
 // ALL app-name references must import from here. Never write the app name as a literal.
 
-/** Display name (e.g. "Sofa Salon" or "ZiggyGraph"). From env or default. */
+/** Display name (e.g. "Sofa Salon" or "Film Club"). From env or default. */
 export const APP_NAME =
   process.env.NEXT_PUBLIC_APP_NAME ?? 'Sofa Salon';
 
@@ -13,6 +13,10 @@ export const APP_TAGLINE =
 
 /** APP_NAME split by space; used for styling or header (e.g. first word in one colour). */
 export const APP_NAME_PARTS = APP_NAME.split(' ');
+
+/** Community/salon name used in descriptive copy. Defaults to the app display name. */
+export const SALON_NAME =
+  process.env.NEXT_PUBLIC_SALON_NAME?.trim() || APP_NAME;
 
 /**
  * Public site URL for links shared with guests (WeChat announcements, email profile links).
@@ -27,20 +31,18 @@ export const CUSTOMER_SITE_ORIGIN = (
 
 /** Locale-specific archive links shown in the main navigation. */
 export const PAST_SCREENINGS_URL_EN =
-  process.env.NEXT_PUBLIC_PAST_SCREENINGS_URL_EN?.trim() ||
-  'https://letterboxd.com/ziggyzaggy/list/ziggygraph-screened/';
+  process.env.NEXT_PUBLIC_PAST_SCREENINGS_URL_EN?.trim() ?? '';
 export const PAST_SCREENINGS_URL_ZH =
-  process.env.NEXT_PUBLIC_PAST_SCREENINGS_URL_ZH?.trim() ||
-  'https://docs.google.com/spreadsheets/d/1lrEE5G72IrhtxurPoYcLOJP2YKwGXGduKA44nYsjQ-M/';
+  process.env.NEXT_PUBLIC_PAST_SCREENINGS_URL_ZH?.trim() ?? '';
 
 /** Public attribution shown in navigation. */
 export const DEVELOPER_NAME =
-  process.env.NEXT_PUBLIC_DEVELOPER_NAME?.trim() || 'Eve';
+  process.env.NEXT_PUBLIC_DEVELOPER_NAME?.trim() ?? '';
 export const DEVELOPER_URL =
-  process.env.NEXT_PUBLIC_DEVELOPER_URL?.trim() || 'https://eveshi.com/';
+  process.env.NEXT_PUBLIC_DEVELOPER_URL?.trim() ?? '';
 
 /** Host and venue identity used by help text and exported receipts. */
-export const HOST_NAME = process.env.NEXT_PUBLIC_HOST_NAME?.trim() || 'Ziggy';
+export const HOST_NAME = process.env.NEXT_PUBLIC_HOST_NAME?.trim() ?? '';
 export const VENUE_ADDRESS = process.env.NEXT_PUBLIC_VENUE_ADDRESS?.trim() ?? '';
 export const RECEIPT_SUBTITLE =
   process.env.NEXT_PUBLIC_RECEIPT_SUBTITLE?.trim() || 'SCREENING ROOM';
@@ -48,10 +50,10 @@ export const RECEIPT_SUBTITLE =
 /**
  * Salon host on the leaderboard: rank #0 in standing, hidden from the public table.
  * Co-admins (`is_admin` without a matching name here) compete like any guest.
- * Comma-separated, case-insensitive display names. Default: Ziggy
+ * Comma-separated, case-insensitive display names. Empty by default.
  */
 export const LEADERBOARD_HOST_DISPLAY_NAMES: readonly string[] = (
-  process.env.LEADERBOARD_HOST_DISPLAY_NAMES ?? 'Ziggy'
+  process.env.LEADERBOARD_HOST_DISPLAY_NAMES ?? ''
 )
   .split(',')
   .map((s) => s.trim().toLowerCase())

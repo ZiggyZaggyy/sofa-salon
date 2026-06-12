@@ -180,7 +180,9 @@ export default function ReceiptSVG({ data }: { data: ReceiptData }) {
       <text x={textLeft} y={session1Y} fontFamily={FONT} fontSize={7} fill="#555">VIEWING RECORD</text>
       <text x={textRight} y={session1Y} fontFamily={FONT} fontSize={7} fill="#555" textAnchor="end">#{receiptNumber}</text>
       <text x={textLeft} y={session2Y} fontFamily={FONT} fontSize={7} fill="#888">{formatSessionDate(generatedAt)}</text>
-      <text x={textRight} y={session2Y} fontFamily={FONT} fontSize={7} fill="#888" textAnchor="end">{HOST_NAME.toUpperCase()}</text>
+      {HOST_NAME ? (
+        <text x={textRight} y={session2Y} fontFamily={FONT} fontSize={7} fill="#888" textAnchor="end">{HOST_NAME.toUpperCase()}</text>
+      ) : null}
       <SeparatorDashes paperLeft={paperLeft} y={sep2Y} />
       <text x={textLeft} y={colHeaderY} fontFamily={FONT} fontSize={7} fill="#777">FILM</text>
       <text x={centerX + 40} y={colHeaderY} fontFamily={FONT} fontSize={7} fill="#777" textAnchor="middle">DATE</text>
