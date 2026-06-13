@@ -1,23 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { roomCapacity, type FurniturePiece } from '@/lib/furniture';
 
 export async function GET() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('rooms')
-    .select('id, name, furniture_json')
+    .select('id, name')
     .order('created_at', { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({
-    rooms: (data ?? []).map((room) => ({
-      id: room.id,
-      name: room.name,
-      capacity: roomCapacity(
-        (room.furniture_json as FurniturePiece[] | null) ?? []
-      ),
-    })),
-  });
+  return NextResponse.json({ rooms: data ?? [] });
 }
 
 export async function POST(req: NextRequest) {

@@ -1,9 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
+import { roomCapacity } from '@/lib/furniture';
 import type { FurniturePiece } from '@/lib/furniture';
 import { CUSTOMER_SITE_ORIGIN } from '@/lib/config';
-import { screeningCapacity } from '@/lib/screening-seat-capacity';
 
 const REGISTRATION_LINK = `${CUSTOMER_SITE_ORIGIN}/`;
 
@@ -40,7 +40,6 @@ export async function GET() {
       duration_minutes,
       description,
       room_id,
-      seat_limit,
       waitlist_mode,
       rooms ( furniture_json )
     `)
@@ -80,10 +79,7 @@ export async function GET() {
     const furniture = (Array.isArray(furnitureJson)
       ? furnitureJson
       : []) as FurniturePiece[];
-    const capacity = screeningCapacity(
-      furniture,
-      (s as { seat_limit?: number | null }).seat_limit ?? null
-    );
+    const capacity = roomCapacity(furniture);
     return {
       id: s.id,
       title: (s as { title: string }).title ?? '',

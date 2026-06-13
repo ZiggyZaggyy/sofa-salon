@@ -9,7 +9,6 @@ import { ALT_LOCALE_MIGRATION_ERROR_KEY } from '@/lib/screening-alt-locale-schem
 interface Room {
   id: string;
   name: string;
-  capacity: number;
 }
 
 interface ScreeningFormData {
@@ -21,7 +20,6 @@ interface ScreeningFormData {
   trailer_url: string;
   screening_at: string;
   room_id: string;
-  seat_limit?: number | null;
   squeeze_note: string;
   waitlist_mode: 'auto' | 'manual';
   is_active: boolean;
@@ -60,9 +58,6 @@ export default function EditScreeningForm({ screening, rooms, isPast = false }: 
   const [trailerUrl, setTrailerUrl] = useState(screening.trailer_url ?? '');
   const [screeningAt, setScreeningAt] = useState(toLocalDatetimeLocal(screening.screening_at));
   const [roomId, setRoomId] = useState(screening.room_id);
-  const [seatLimit, setSeatLimit] = useState(
-    screening.seat_limit != null ? String(screening.seat_limit) : ''
-  );
   const [waitlistMode, setWaitlistMode] = useState<'auto' | 'manual'>(screening.waitlist_mode);
   const [isActive, setIsActive] = useState(screening.is_active);
   const [year, setYear] = useState(screening.year != null ? String(screening.year) : '');
@@ -88,7 +83,6 @@ export default function EditScreeningForm({ screening, rooms, isPast = false }: 
           trailer_url: trailerUrl.trim(),
           screening_at: screening.screening_at,
           room_id: screening.room_id || null,
-          seat_limit: screening.seat_limit ?? null,
           squeeze_note: screening.squeeze_note ?? '',
           waitlist_mode: screening.waitlist_mode,
           is_active: screening.is_active,
@@ -106,7 +100,6 @@ export default function EditScreeningForm({ screening, rooms, isPast = false }: 
           trailer_url: trailerUrl.trim(),
           screening_at: new Date(screeningAt).toISOString(),
           room_id: roomId || null,
-          seat_limit: roomId && seatLimit ? parseInt(seatLimit, 10) : null,
           squeeze_note: screening.squeeze_note ?? '',
           waitlist_mode: waitlistMode,
           is_active: isActive,
@@ -321,12 +314,7 @@ export default function EditScreeningForm({ screening, rooms, isPast = false }: 
               </label>
               <select
                 value={roomId}
-                onChange={(e) => {
-                  const nextRoomId = e.target.value;
-                  const room = rooms.find((candidate) => candidate.id === nextRoomId);
-                  setRoomId(nextRoomId);
-                  setSeatLimit(room && room.capacity > 0 ? String(room.capacity) : '');
-                }}
+                onChange={(e) => setRoomId(e.target.value)}
                 className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a]"
                 style={{ borderRadius: 0 }}
               >
@@ -337,28 +325,6 @@ export default function EditScreeningForm({ screening, rooms, isPast = false }: 
                   </option>
                 ))}
               </select>
-            </div>
-            <div>
-              <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
-                Seats available
-              </label>
-              <input
-                type="number"
-                value={seatLimit}
-                onChange={(e) => setSeatLimit(e.target.value)}
-                className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444] disabled:opacity-50"
-                placeholder={roomId ? 'Enter seat count' : 'Select a room first'}
-                min="1"
-                max={rooms.find((room) => room.id === roomId)?.capacity}
-                required={Boolean(roomId)}
-                disabled={!roomId}
-                style={{ borderRadius: 0 }}
-              />
-              <p className="font-mono text-[11px] text-[#555] mt-1.5">
-                {roomId
-                  ? `Room capacity: ${rooms.find((room) => room.id === roomId)?.capacity ?? 0}. Existing reservations must fit within the new limit.`
-                  : 'Choose a room to set this screening’s seat count.'}
-              </p>
             </div>
             <div>
               <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
