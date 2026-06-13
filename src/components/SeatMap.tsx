@@ -5,17 +5,15 @@ import { createClient } from '@/lib/supabase/client';
 import {
   FurniturePiece,
   Decoration,
+  getSeatPositions,
   getSqueezePositions,
+  roomCapacity,
+  roomCapacityWithSqueeze,
   canSqueeze,
   getFurnitureFocusBox,
   seatKeyToDisplayLabel,
   ROOM_BACKGROUND_PRESETS,
 } from '@/lib/furniture';
-import {
-  effectiveRegularSeatPositions,
-  reservableSeatKeys,
-  screeningCapacityWithSqueeze,
-} from '@/lib/screening-seat-capacity';
 import { jsonToConfig, avatarConfigFromSeed } from '@/lib/avatar';
 import FurnitureSVG from '@/components/FurnitureSVG';
 import DecorationSVG from '@/components/DecorationSVG';
@@ -73,7 +71,6 @@ interface SeatMapProps {
     /** 房间背景预设 id，由 host 在「修改房间」中设置 */
     roomBackgroundId?: string | null;
   };
-  seatLimit?: number | null;
   squeezeNote: string | null;
   initialReservations: Reservation[];
   initialWaitlist: WaitlistEntry[];
@@ -98,7 +95,6 @@ export default function SeatMap({
   screeningId,
   screeningTitle,
   room,
-  seatLimit = null,
   squeezeNote,
   initialReservations,
   initialWaitlist,
@@ -303,8 +299,12 @@ export default function SeatMap({
   }, [screeningId, isAdmin, onReservationsChange, fetchWaitlist, skipInitialReservationFetch]);
 
   const allSeatKeys = useMemo(
-    () => reservableSeatKeys(room.furniture, seatLimit),
-    [room.furniture, seatLimit]
+    () =>
+      room.furniture.flatMap((p) => [
+        ...getSeatPositions(p).map((s) => s.seatKey),
+        ...getSqueezePositions(p).map((s) => s.seatKey),
+      ]),
+    [room.furniture]
   );
   const takenSeatKeys = useMemo(
     () => new Set(reservations.map((r) => r.seat_key)),
@@ -315,23 +315,19 @@ export default function SeatMap({
     [allSeatKeys, takenSeatKeys]
   );
 
-  const totalNormalSeats = effectiveRegularSeatPositions(
-    room.furniture,
-    seatLimit
-  ).length;
-  const totalSqueezeSeats =
-    seatLimit == null
-      ? room.furniture
-          .filter(canSqueeze)
-          .reduce((s, f) => s + f.squeezeExtra, 0)
-      : 0;
+  const totalNormalSeats = room.furniture.reduce(
+    (s, f) => s + getSeatPositions(f).length,
+    0
+  );
+  const totalSqueezeSeats = room.furniture
+    .filter(canSqueeze)
+    .reduce((s, f) => s + f.squeezeExtra, 0);
   const takenNormal = reservations.filter((r) => !r.is_squeezed).length;
   const takenSqueeze = reservations.filter((r) => r.is_squeezed).length;
   const allFull =
     takenNormal >= totalNormalSeats && takenSqueeze >= totalSqueezeSeats;
 
   function showSqueezeFor(piece: FurniturePiece): boolean {
-    if (seatLimit != null) return false;
     if (!canSqueeze(piece) || piece.squeezeExtra === 0) return false;
     const normalTaken = reservations.filter(
       (r) =>
@@ -347,11 +343,7 @@ export default function SeatMap({
     return reservations.some((r) => r.seat_key.startsWith(`${piece.id}:squeeze:`));
   }
 
-  const showSqueezeLayer =
-    seatLimit == null &&
-    (!isAdmin ||
-      testSqueeze ||
-      (isAdmin && reservations.some((r) => r.is_squeezed)));
+  const showSqueezeLayer = !isAdmin || testSqueeze || (isAdmin && reservations.some((r) => r.is_squeezed));
 
   const myReservations = reservations.filter(
     (r) => r.user_id === currentUser?.id && !r.is_ghost
@@ -578,7 +570,7 @@ export default function SeatMap({
     await onReservationsChange?.();
   };
 
-  const allSeats = effectiveRegularSeatPositions(room.furniture, seatLimit);
+  const allSeats = room.furniture.flatMap((p) => getSeatPositions(p));
   const avatarPx = Math.max(36, Math.round(room.canvasW * 0.06));
   const nameSize = Math.max(9, Math.round(10 * scale));
   const seatTransform = 'translateX(-50%) translateY(-50%)';
@@ -593,8 +585,7 @@ export default function SeatMap({
       <div className="flex gap-4 font-mono text-[13px] text-[#888888] mb-4 flex-wrap">
         <span>
           <span className="text-[#e8c84a]">{reservations.length}</span> /{' '}
-          {screeningCapacityWithSqueeze(room.furniture, seatLimit)}{' '}
-          {t.screening.seatsTaken}
+          {roomCapacityWithSqueeze(room.furniture)} {t.screening.seatsTaken}
         </span>
         {squeezeNote && (
           <span className="text-[#444444]">· {squeezeNote}</span>

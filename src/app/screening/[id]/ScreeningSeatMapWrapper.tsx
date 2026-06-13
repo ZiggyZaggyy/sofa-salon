@@ -40,7 +40,6 @@ interface Props {
   filmTitle: string;
   filmTitleEn?: string | null;
   room: SeatMapRoom;
-  seatLimit: number | null;
   squeezeNote: string | null;
   initialReservations: Reservation[];
   initialWaitlist: WaitlistEntry[];

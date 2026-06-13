@@ -13,7 +13,6 @@ export type SeatmapApiPayload = {
   filmTitle?: string;
   filmTitleEn?: string | null;
   screeningTitle?: string;
-  seatLimit?: number | null;
   squeezeNote?: string | null;
   waitlistMode?: string;
 };

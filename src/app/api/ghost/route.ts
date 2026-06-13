@@ -6,8 +6,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomAvatarConfig } from '@/lib/avatar';
-import type { FurniturePiece } from '@/lib/furniture';
-import { reservableSeatKeys } from '@/lib/screening-seat-capacity';
+import {
+  getSeatPositions,
+  getSqueezePositions,
+  type FurniturePiece,
+} from '@/lib/furniture';
 
 const GHOST_NAMES = [
   'Alex',
@@ -60,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   const { data: screening } = await supabase
     .from('screenings')
-    .select('id, room_id, seat_limit')
+    .select('id, room_id')
     .eq('id', screeningId)
     .single();
   if (!screening?.room_id) {
@@ -77,10 +80,10 @@ export async function POST(req: NextRequest) {
     .single();
   const furniture = (room?.furniture_json as FurniturePiece[]) ?? [];
 
-  const allSeatKeys = reservableSeatKeys(
-    furniture,
-    (screening as { seat_limit?: number | null }).seat_limit ?? null
-  );
+  const allSeatKeys = furniture.flatMap((p) => [
+    ...getSeatPositions(p).map((s) => s.seatKey),
+    ...getSqueezePositions(p).map((s) => s.seatKey),
+  ]);
   if (allSeatKeys.length === 0) {
     return NextResponse.json(
       { error: 'Room has no seats' },
