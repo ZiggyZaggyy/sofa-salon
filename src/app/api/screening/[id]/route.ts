@@ -205,7 +205,10 @@ export async function PATCH(
     );
   }
 
-  if (rescheduled) {
+  const existingWasPast =
+    prev?.screening_at != null &&
+    screeningDeleteSkipsCancellationNotify(prev.screening_at);
+  if (rescheduled && !existingWasPast) {
     const screeningTitle = prev?.title ?? title;
     const [{ data: reservations }] = await Promise.all([
       supabase.from('reservations').select('user_id').eq('screening_id', id),

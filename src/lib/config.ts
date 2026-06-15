@@ -29,12 +29,6 @@ export const CUSTOMER_SITE_ORIGIN = (
   'http://localhost:3000'
 ).replace(/\/$/, '');
 
-/** Locale-specific archive links shown in the main navigation. */
-export const PAST_SCREENINGS_URL_EN =
-  process.env.NEXT_PUBLIC_PAST_SCREENINGS_URL_EN?.trim() ?? '';
-export const PAST_SCREENINGS_URL_ZH =
-  process.env.NEXT_PUBLIC_PAST_SCREENINGS_URL_ZH?.trim() ?? '';
-
 export type DeveloperAttribution = {
   name: string;
   url: string;

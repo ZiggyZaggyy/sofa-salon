@@ -6,7 +6,6 @@ import BackButton from '@/components/BackButton';
 import { useLocale } from '@/components/LocaleProvider';
 import { ALT_LOCALE_MIGRATION_ERROR_KEY } from '@/lib/screening-alt-locale-schema';
 import {
-  formatScreeningInVenue,
   toVenueDatetimeLocal,
   VENUE_TIMEZONE,
   venueDatetimeLocalToIso,
@@ -39,7 +38,7 @@ interface ScreeningFormData {
 interface Props {
   screening: ScreeningFormData;
   rooms: Room[];
-  /** When true, only film details (director, duration, description, links, year) are editable; title and screening_at are locked. */
+  /** Past events keep room/waitlist controls hidden, but archive metadata remains editable. */
   isPast?: boolean;
 }
 
@@ -66,44 +65,26 @@ export default function EditScreeningForm({ screening, rooms, isPast = false }: 
   const [error, setError] = useState('');
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isPast && (!title || !screeningAt)) return;
+    if (!title || !screeningAt) return;
     setLoading(true);
     setError('');
-    const payload = isPast
-      ? {
-          title: screening.title,
-          description,
-          douban_url: doubanUrl.trim(),
-          letterboxd_url: letterboxdUrl.trim(),
-          trailer_url: trailerUrl.trim(),
-          screening_at: screening.screening_at,
-          room_id: screening.room_id || null,
-          squeeze_note: screening.squeeze_note ?? '',
-          waitlist_mode: screening.waitlist_mode,
-          is_active: screening.is_active,
-          year: year ? parseInt(year, 10) : null,
-          director: director || null,
-          duration_minutes: durationMinutes ? parseInt(durationMinutes, 10) : null,
-          title_en: titleEn.trim() || null,
-          director_en: directorEn.trim() || null,
-        }
-      : {
-          title,
-          description,
-          douban_url: doubanUrl.trim(),
-          letterboxd_url: letterboxdUrl.trim(),
-          trailer_url: trailerUrl.trim(),
-          screening_at: venueDatetimeLocalToIso(screeningAt),
-          room_id: roomId || null,
-          squeeze_note: screening.squeeze_note ?? '',
-          waitlist_mode: waitlistMode,
-          is_active: isActive,
-          year: year ? parseInt(year, 10) : null,
-          director: director || null,
-          duration_minutes: durationMinutes ? parseInt(durationMinutes, 10) : null,
-          title_en: titleEn.trim() || null,
-          director_en: directorEn.trim() || null,
-        };
+    const payload = {
+      title,
+      description,
+      douban_url: doubanUrl.trim(),
+      letterboxd_url: letterboxdUrl.trim(),
+      trailer_url: trailerUrl.trim(),
+      screening_at: venueDatetimeLocalToIso(screeningAt),
+      room_id: roomId || null,
+      squeeze_note: screening.squeeze_note ?? '',
+      waitlist_mode: waitlistMode,
+      is_active: isActive,
+      year: year ? parseInt(year, 10) : null,
+      director: director || null,
+      duration_minutes: durationMinutes ? parseInt(durationMinutes, 10) : null,
+      title_en: titleEn.trim() || null,
+      director_en: directorEn.trim() || null,
+    };
     const res = await fetch(`/api/screening/${screening.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -142,50 +123,28 @@ export default function EditScreeningForm({ screening, rooms, isPast = false }: 
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
             Title
           </label>
-          {isPast ? (
-            <p className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] font-mono text-[13px] px-4 py-3 min-h-[44px]" style={{ borderRadius: 0 }}>
-              {screening.title || '—'}
-            </p>
-          ) : (
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
-              placeholder="e.g. Chungking Express"
-              required
-              style={{ borderRadius: 0 }}
-            />
-          )}
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
+            placeholder="e.g. Chungking Express"
+            required
+            style={{ borderRadius: 0 }}
+          />
         </div>
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
             Date & time ({VENUE_TIMEZONE})
           </label>
-          {isPast ? (
-            <p className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] font-mono text-[13px] px-4 py-3 min-h-[44px]" style={{ borderRadius: 0 }}>
-              {screeningAt
-                ? formatScreeningInVenue(screening.screening_at, 'en-US', {
-                    weekday: 'short',
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    timeZoneName: 'short',
-                  })
-                : '—'}
-            </p>
-          ) : (
-            <input
-              type="datetime-local"
-              value={screeningAt}
-              onChange={(e) => setScreeningAt(e.target.value)}
-              className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a]"
-              required
-              style={{ borderRadius: 0 }}
-            />
-          )}
+          <input
+            type="datetime-local"
+            value={screeningAt}
+            onChange={(e) => setScreeningAt(e.target.value)}
+            className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a]"
+            required
+            style={{ borderRadius: 0 }}
+          />
         </div>
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">

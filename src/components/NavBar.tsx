@@ -9,8 +9,6 @@ import {
   APP_NAME_PARTS,
   APP_TAGLINE,
   DEVELOPERS,
-  PAST_SCREENINGS_URL_EN,
-  PAST_SCREENINGS_URL_ZH,
 } from '@/lib/config';
 import { useLocale } from '@/components/LocaleProvider';
 import AvatarSVG from '@/components/AvatarSVG';
@@ -101,25 +99,12 @@ export default function NavBar() {
     }`;
 
   const pastScreeningsNavLink = (extraClass = '', onNavigate?: () => void) => {
-    const href = locale === 'zh' ? PAST_SCREENINGS_URL_ZH : PAST_SCREENINGS_URL_EN;
-    if (!href) return null;
-    const isExternal = href.startsWith('http://') || href.startsWith('https://');
-    const className = linkClass(!isExternal && !!pathname?.startsWith(href)) + extraClass;
-    if (isExternal) {
-      return (
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={className}
-          onClick={onNavigate}
-        >
-          {t.nav.pastScreenings}
-        </a>
-      );
-    }
     return (
-      <Link href={href} className={className} onClick={onNavigate}>
+      <Link
+        href="/past-screenings"
+        className={linkClass(!!pathname?.startsWith('/past-screenings')) + extraClass}
+        onClick={onNavigate}
+      >
         {t.nav.pastScreenings}
       </Link>
     );

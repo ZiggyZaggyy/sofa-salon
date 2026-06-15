@@ -194,7 +194,7 @@ export const tEn = {
     adminOnly: 'Admin only.',
     backToAdmin: '← Admin',
     pastEventEditHint:
-      'Past event: only film details (director, duration, description, English title/director, Douban / Letterboxd / trailer links) can be edited. Main title and screening time are locked.',
+      'Past event: changes update the public archive and attendance history. Editing the date does not send reschedule notifications.',
     altLanguageTitle: 'Alternative language title (English)',
     altLanguageTitleHint:
       'Shown on the homepage, ticker, and screening page when the site language is English. Leave blank to use the main title.',
@@ -472,6 +472,16 @@ export const tEn = {
     noRoom: 'No room configured for this event.',
     loadError: 'The seat map could not be loaded. Please refresh and try again.',
   },
+  pastScreeningsPage: {
+    title: 'Past screenings',
+    intro: 'Every completed screening is archived here automatically.',
+    searchPlaceholder: 'Search title or director',
+    search: 'Search',
+    empty: 'No past screenings yet.',
+    previous: 'Previous',
+    next: 'Next',
+    pageStatus: 'Page {page} of {pages}',
+  },
   common: {
     loading: 'Loading...',
   },
@@ -647,7 +657,7 @@ export const tZh = {
     adminOnly: '仅管理员。',
     backToAdmin: '← 返回管理',
     pastEventEditHint:
-      '已结束活动：仅可编辑影片详情（导演、时长、描述、英文标题/导演、豆瓣 / Letterboxd / 预告片链接），主标题与放映时间不可修改。',
+      '已结束活动：修改内容会同步到公开往期列表及观影记录；调整日期不会发送改期通知。',
     altLanguageTitle: '英文标题（备选）',
     altLanguageTitleHint:
       '当网站语言为英文时，在首页、弹幕与活动页显示；留空则仍显示主标题。',
@@ -919,6 +929,16 @@ export const tZh = {
     loadingSeats: '加载座位中...',
     noRoom: '未配置房间。',
     loadError: '座位图加载失败，请刷新后重试。',
+  },
+  pastScreeningsPage: {
+    title: '往期放映',
+    intro: '每场放映结束后都会自动归档在这里。',
+    searchPlaceholder: '搜索片名或导演',
+    search: '搜索',
+    empty: '暂无往期放映。',
+    previous: '上一页',
+    next: '下一页',
+    pageStatus: '第 {page} / {pages} 页',
   },
   common: {
     loading: '加载中...',

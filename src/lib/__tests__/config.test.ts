@@ -10,8 +10,6 @@ import {
   DEVELOPER_NAME,
   DEVELOPER_URL,
   HOST_NAME,
-  PAST_SCREENINGS_URL_EN,
-  PAST_SCREENINGS_URL_ZH,
   RECEIPT_SUBTITLE,
   SALON_NAME,
   VENUE_ADDRESS,
@@ -37,8 +35,6 @@ describe('config', () => {
 
   it('uses neutral deployment identity defaults', () => {
     expect(SALON_NAME).toBe(APP_NAME);
-    expect(PAST_SCREENINGS_URL_EN).toBe('');
-    expect(PAST_SCREENINGS_URL_ZH).toBe('');
     expect(DEVELOPERS).toEqual([]);
     expect(DEVELOPER_NAME).toBe('');
     expect(DEVELOPER_URL).toBe('');
@@ -109,8 +105,6 @@ describe('CUSTOMER_SITE_ORIGIN', () => {
 describe('deployment identity overrides', () => {
   const keys = [
     'NEXT_PUBLIC_SALON_NAME',
-    'NEXT_PUBLIC_PAST_SCREENINGS_URL_EN',
-    'NEXT_PUBLIC_PAST_SCREENINGS_URL_ZH',
     'NEXT_PUBLIC_DEVELOPERS',
     'NEXT_PUBLIC_DEVELOPER_NAME',
     'NEXT_PUBLIC_DEVELOPER_URL',
@@ -126,8 +120,6 @@ describe('deployment identity overrides', () => {
   it('uses public environment variables for fork-specific identity', () => {
     jest.isolateModules(() => {
       process.env.NEXT_PUBLIC_SALON_NAME = 'Example Film Club';
-      process.env.NEXT_PUBLIC_PAST_SCREENINGS_URL_EN = 'https://example.com/archive/en';
-      process.env.NEXT_PUBLIC_PAST_SCREENINGS_URL_ZH = 'https://example.com/archive/zh';
       process.env.NEXT_PUBLIC_DEVELOPER_NAME = 'Example Dev';
       process.env.NEXT_PUBLIC_DEVELOPER_URL = 'https://example.com/dev';
       process.env.NEXT_PUBLIC_HOST_NAME = 'Example Host';
@@ -136,8 +128,6 @@ describe('deployment identity overrides', () => {
       const mod = require('../config') as typeof import('../config');
 
       expect(mod.SALON_NAME).toBe('Example Film Club');
-      expect(mod.PAST_SCREENINGS_URL_EN).toBe('https://example.com/archive/en');
-      expect(mod.PAST_SCREENINGS_URL_ZH).toBe('https://example.com/archive/zh');
       expect(mod.DEVELOPER_NAME).toBe('Example Dev');
       expect(mod.DEVELOPER_URL).toBe('https://example.com/dev');
       expect(mod.DEVELOPERS).toEqual([

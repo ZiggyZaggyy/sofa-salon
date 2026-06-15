@@ -208,7 +208,7 @@ See **`TESTING.md`** for each file's scope and how to add tests.
 
 ## 7. Code and conventions
 
-- **Deployment identity:** Define app, archive, navigation attribution, host references, and receipt values through `.env.local`; `src/lib/config.ts` is the single source of truth.
+- **Deployment identity:** Define app, navigation attribution, host references, and receipt values through `.env.local`; `src/lib/config.ts` is the single source of truth.
 - **Env:** Use `process.env.*`; only `NEXT_PUBLIC_*` is available in the browser.
 - **Naming:** Prefer clear names (`screeningId`, `userId`, `seatKey`).
 - **SQL:** Single source of truth in `supabase-sql/`; run in numeric order.
