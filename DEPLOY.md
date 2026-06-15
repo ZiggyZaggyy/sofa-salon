@@ -89,9 +89,11 @@ git push -u origin main
 |--------|------|------|
 | `NEXT_PUBLIC_SUPABASE_URL` | 是 | Supabase Project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 是 | Supabase anon public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | 否 | 用于 waitlist 升级、发邮件等，不填则部分后台功能不可用 |
+| `SUPABASE_SERVICE_ROLE_KEY` | 推荐 | Supabase **Settings → API Keys** 中的 `sb_secret_...`（推荐）或旧版 `service_role`；仅限服务端，用于 waitlist、后台和邮件 |
 | `RESEND_API_KEY` | 否 | 发预约/候补邮件，不填则不发邮件 |
 | `EMAIL_FROM` | 否 | 发件人邮箱（用 Resend 发信时填）；要向任意收件人发信，须先在 Resend **Domains** 验证你的发信域名，再填该域名下的地址（见 `docs/SUPABASE-RESEND-SMTP.md`） |
+| `HOST_CONTACT_EMAIL` | 否 | `/contact` 表单发送到的主理人收件邮箱 |
+| `CRON_SECRET` | 否 | 至少 16 位随机字符串，用于保护活动提醒和观后评分提醒的 cron 路由 |
 | `NEXT_PUBLIC_CUSTOMER_SITE_URL` | 生产必填 | 对外链接（邮件里的个人页、群公告里的报名链接等）；未设置时依次回退到 `NEXT_PUBLIC_APP_URL` 与 `http://localhost:3000` |
 | `NEXT_PUBLIC_APP_URL` | 否 | 兜底 origin（极少用）；Auth 回调优先用用户实际访问的域名，见 `docs/GOOGLE_AUTH_SETUP.md` |
 | `NEXT_PUBLIC_APP_NAME` | 否 | 应用名称，默认 "Sofa Salon" |
