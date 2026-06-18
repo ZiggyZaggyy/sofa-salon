@@ -2,7 +2,13 @@
  * Unit tests for lib/i18n.ts — locale and ticker-related profile strings.
  * Ensures en/zh keys exist and Chinese strings are used for zh (e.g. 发弹幕).
  */
-import { getT, tEn, tZh } from '../i18n';
+import {
+  DEFAULT_LOCALE,
+  getT,
+  localeFromValue,
+  tEn,
+  tZh,
+} from '../i18n';
 
 /** Returns all key paths (e.g. ['nav','home']) in a nested object, sorted. */
 function getAllKeyPaths(obj: Record<string, unknown>, prefix: string[] = []): string[][] {
@@ -58,6 +64,15 @@ describe('getT', () => {
   it('returns admin ticker keys for both locales', () => {
     expect(getT('en').admin.tickerManage).toBe('Ticker');
     expect(getT('zh').admin.tickerManage).toBe('弹幕');
+  });
+});
+
+describe('localeFromValue', () => {
+  it('preserves supported locales and falls back to the deployment default', () => {
+    expect(localeFromValue('en')).toBe('en');
+    expect(localeFromValue('zh')).toBe('zh');
+    expect(localeFromValue(undefined)).toBe(DEFAULT_LOCALE);
+    expect(localeFromValue('unsupported')).toBe(DEFAULT_LOCALE);
   });
 });
 

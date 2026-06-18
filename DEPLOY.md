@@ -89,18 +89,20 @@ git push -u origin main
 |--------|------|------|
 | `NEXT_PUBLIC_SUPABASE_URL` | 是 | Supabase Project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 是 | Supabase anon public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | 否 | 用于 waitlist 升级、发邮件等，不填则部分后台功能不可用 |
+| `SUPABASE_SERVICE_ROLE_KEY` | 推荐 | Supabase **Settings → API Keys** 中的 `sb_secret_...`（推荐）或旧版 `service_role`；仅限服务端，用于 waitlist、后台和邮件 |
 | `RESEND_API_KEY` | 否 | 发预约/候补邮件，不填则不发邮件 |
 | `EMAIL_FROM` | 否 | 发件人邮箱（用 Resend 发信时填）；要向任意收件人发信，须先在 Resend **Domains** 验证你的发信域名，再填该域名下的地址（见 `docs/SUPABASE-RESEND-SMTP.md`） |
+| `HOST_CONTACT_EMAIL` | 否 | `/contact` 表单发送到的主理人收件邮箱 |
+| `CRON_SECRET` | 否 | 至少 16 位随机字符串，用于保护活动提醒和观后评分提醒的 cron 路由 |
 | `NEXT_PUBLIC_CUSTOMER_SITE_URL` | 生产必填 | 对外链接（邮件里的个人页、群公告里的报名链接等）；未设置时依次回退到 `NEXT_PUBLIC_APP_URL` 与 `http://localhost:3000` |
 | `NEXT_PUBLIC_APP_URL` | 否 | 兜底 origin（极少用）；Auth 回调优先用用户实际访问的域名，见 `docs/GOOGLE_AUTH_SETUP.md` |
 | `NEXT_PUBLIC_APP_NAME` | 否 | 应用名称，默认 "Sofa Salon" |
 | `NEXT_PUBLIC_APP_TAGLINE` | 否 | 副标题，默认 "Your host's living room" |
 | `NEXT_PUBLIC_SALON_NAME` | 否 | 描述文案中的社群/放映空间名称；默认使用 `NEXT_PUBLIC_APP_NAME` |
-| `NEXT_PUBLIC_PAST_SCREENINGS_URL_EN` | 否 | 英文界面的往期放映链接；未设置时隐藏 |
-| `NEXT_PUBLIC_PAST_SCREENINGS_URL_ZH` | 否 | 中文界面的往期放映链接；未设置时隐藏 |
-| `NEXT_PUBLIC_DEVELOPER_NAME` | 否 | 导航栏显示的开发者名称；未设置时隐藏署名 |
-| `NEXT_PUBLIC_DEVELOPER_URL` | 否 | 开发者主页链接；名称存在但链接为空时显示为纯文本 |
+| `NEXT_PUBLIC_VENUE_TIMEZONE` | 推荐 | 所有放映时间、预约、公告和邮件使用的 IANA 时区，例如 `America/Los_Angeles`；会自动切换 PST/PDT |
+| `NEXT_PUBLIC_DEVELOPERS` | 否 | 导航栏开发者列表，JSON 数组，例如 `[{"name":"A","url":"https://github.com/a"},{"name":"B","url":"https://github.com/b"}]`；未设置时隐藏署名 |
+| `NEXT_PUBLIC_DEVELOPER_NAME` | 否 | 旧版单开发者名称；仅在 `NEXT_PUBLIC_DEVELOPERS` 未设置或无有效项目时使用 |
+| `NEXT_PUBLIC_DEVELOPER_URL` | 否 | 旧版单开发者主页链接 |
 | `NEXT_PUBLIC_HOST_NAME` | 否 | FAQ 主理人引用与观影小票显示的名称；未设置时 FAQ 使用通用称呼、小票不显示 |
 | `NEXT_PUBLIC_VENUE_ADDRESS` | 否 | 观影小票显示的场地地址；留空则隐藏 |
 | `NEXT_PUBLIC_RECEIPT_SUBTITLE` | 否 | 观影小票副标题 |

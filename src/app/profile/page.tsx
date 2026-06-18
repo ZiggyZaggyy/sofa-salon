@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { APP_NAME_PARTS, SALON_NAME } from '@/lib/config';
-import { getT, type Locale } from '@/lib/i18n';
+import { getT, localeFromValue } from '@/lib/i18n';
 import { getBadgeLevel } from '@/lib/badges';
 import { jsonToConfig } from '@/lib/avatar';
 import AvatarSVG from '@/components/AvatarSVG';
@@ -13,6 +13,7 @@ import BadgeWithPopup from './BadgeWithPopup';
 import TickerUserSubmit from '@/components/TickerUserSubmit';
 import WatchHistory from './WatchHistory';
 import { fetchAttendanceCountForUser, noShowScreeningIds } from '@/lib/attendance';
+import { formatScreeningInVenue } from '@/lib/screening-datetime';
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -102,7 +103,7 @@ export default async function ProfilePage() {
     .sort((a, b) => new Date(a.screeningAt).getTime() - new Date(b.screeningAt).getTime());
 
   const cookieStore = await cookies();
-  const locale: Locale = cookieStore.get('sofa-salon-locale')?.value === 'zh' ? 'zh' : 'en';
+  const locale = localeFromValue(cookieStore.get('sofa-salon-locale')?.value);
   const t = getT(locale);
 
   return (
@@ -172,17 +173,24 @@ export default async function ProfilePage() {
           ) : (
             <ul className="space-y-3">
               {upcomingReservations.map(({ screeningId, title, screeningAt, seatCount }) => {
-                const d = new Date(screeningAt);
-                const dateStr = d.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-GB', {
+                const dateStr = formatScreeningInVenue(
+                  screeningAt,
+                  locale === 'zh' ? 'zh-CN' : 'en-GB',
+                  {
                   weekday: 'short',
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
-                });
-                const timeStr = d.toLocaleTimeString(locale === 'zh' ? 'zh-CN' : 'en-GB', {
+                  }
+                );
+                const timeStr = formatScreeningInVenue(
+                  screeningAt,
+                  locale === 'zh' ? 'zh-CN' : 'en-GB',
+                  {
                   hour: '2-digit',
                   minute: '2-digit',
-                });
+                  }
+                );
                 return (
                   <li key={screeningId} className="border-b border-[#2a2a2a] pb-3 last:border-0 last:pb-0">
                     <p className="font-mono text-[13px] text-[#e8e4dc]">{title}</p>

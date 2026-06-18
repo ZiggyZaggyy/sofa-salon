@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import AvatarSVG from '@/components/AvatarSVG';
 import { jsonToConfig } from '@/lib/avatar';
 import { useLocale } from '@/components/LocaleProvider';
+import { formatScreeningInVenue } from '@/lib/screening-datetime';
 
 interface Screening {
   id: string;
@@ -35,7 +36,7 @@ export default function AdminEvents({
   pastTotalCount,
   pastPageSize,
 }: Props) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const router = useRouter();
   const [extraPastScreenings, setExtraPastScreenings] = useState<Screening[]>([]);
   const [loadingMorePast, setLoadingMorePast] = useState(false);
@@ -134,13 +135,13 @@ export default function AdminEvents({
   };
 
   const renderEventCard = (s: Screening, isPast: boolean) => {
-    const date = new Date(s.screening_at);
-    const dateStr = date.toLocaleDateString('en-GB', {
+    const dateLocale = locale === 'zh' ? 'zh-CN' : 'en-GB';
+    const dateStr = formatScreeningInVenue(s.screening_at, dateLocale, {
       weekday: 'short',
       day: 'numeric',
       month: 'short',
     });
-    const timeStr = date.toLocaleTimeString('en-GB', {
+    const timeStr = formatScreeningInVenue(s.screening_at, dateLocale, {
       hour: '2-digit',
       minute: '2-digit',
     });

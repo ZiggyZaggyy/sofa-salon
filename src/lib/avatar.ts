@@ -1,12 +1,26 @@
+export type AvatarAccessory =
+  | 'none'
+  | 'round-glasses'
+  | 'baseball-cap'
+  | 'beanie'
+  | 'headphones';
+
+export type AvatarBottomStyle = 'jeans' | 'shorts' | 'skirt' | 'wide-leg';
+
 export interface AvatarConfig {
   skinTone: string;
   hairStyle: number;
   hairColor: string;
   topStyle: number;
   topColor: string;
+  bottomStyle: AvatarBottomStyle;
+  bottomColor: string;
   eyeExpression: 'happy' | 'sleepy' | 'excited' | 'neutral';
-  accessory: 'none' | 'glasses' | 'hat';
+  accessory: AvatarAccessory;
 }
+
+export const HAIR_STYLE_COUNT = 14;
+export const TOP_STYLE_COUNT = 4;
 
 const SKIN_TONES = [
   '#f5c5a0',
@@ -34,6 +48,14 @@ const TOP_COLORS = [
   '#d63a2f',
   '#e8824a',
 ];
+const BOTTOM_COLORS = [
+  '#315b96',
+  '#27364f',
+  '#4d4f58',
+  '#63734a',
+  '#7a3f54',
+  '#92724f',
+];
 const EXPRESSIONS: AvatarConfig['eyeExpression'][] = [
   'happy',
   'sleepy',
@@ -43,12 +65,19 @@ const EXPRESSIONS: AvatarConfig['eyeExpression'][] = [
 const ACCESSORIES: AvatarConfig['accessory'][] = [
   'none',
   'none',
-  'none',
-  'glasses',
-  'hat',
+  'round-glasses',
+  'baseball-cap',
+  'beanie',
+  'headphones',
+];
+const BOTTOM_STYLES: AvatarBottomStyle[] = [
+  'jeans',
+  'shorts',
+  'skirt',
+  'wide-leg',
 ];
 
-function pick<T>(arr: T[]): T {
+function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
@@ -59,7 +88,7 @@ function hashSeed(seed: string): number {
   return h;
 }
 
-function pickAt<T>(arr: T[], seed: number): T {
+function pickAt<T>(arr: readonly T[], seed: number): T {
   return arr[seed % arr.length];
 }
 
@@ -68,25 +97,46 @@ export function avatarConfigFromSeed(seed: string): AvatarConfig {
   const h = hashSeed(seed);
   return {
     skinTone: pickAt(SKIN_TONES, h),
-    hairStyle: (h % 6) + 1,
-    hairColor: pickAt(HAIR_COLORS, h >>> 4),
-    topStyle: (h >>> 8) % 4 + 1,
-    topColor: pickAt(TOP_COLORS, h >>> 12),
-    eyeExpression: pickAt(EXPRESSIONS, h >>> 16),
-    accessory: pickAt(ACCESSORIES, h >>> 20),
+    hairStyle: ((h >>> 3) % HAIR_STYLE_COUNT) + 1,
+    hairColor: pickAt(HAIR_COLORS, h >>> 7),
+    topStyle: ((h >>> 11) % TOP_STYLE_COUNT) + 1,
+    topColor: pickAt(TOP_COLORS, h >>> 13),
+    bottomStyle: pickAt(BOTTOM_STYLES, h >>> 17),
+    bottomColor: pickAt(BOTTOM_COLORS, h >>> 19),
+    eyeExpression: pickAt(EXPRESSIONS, h >>> 23),
+    accessory: pickAt(ACCESSORIES, h >>> 27),
   };
 }
 
 export function randomAvatarConfig(): AvatarConfig {
   return {
     skinTone: pick(SKIN_TONES),
-    hairStyle: Math.floor(Math.random() * 6) + 1,
+    hairStyle: Math.floor(Math.random() * HAIR_STYLE_COUNT) + 1,
     hairColor: pick(HAIR_COLORS),
-    topStyle: Math.floor(Math.random() * 4) + 1,
+    topStyle: Math.floor(Math.random() * TOP_STYLE_COUNT) + 1,
     topColor: pick(TOP_COLORS),
+    bottomStyle: pick(BOTTOM_STYLES),
+    bottomColor: pick(BOTTOM_COLORS),
     eyeExpression: pick(EXPRESSIONS),
     accessory: pick(ACCESSORIES),
   };
+}
+
+function numberInRange(value: unknown, min: number, max: number, fallback: number): number {
+  return typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= min &&
+    value <= max
+    ? value
+    : fallback;
+}
+
+function normalizeAccessory(value: unknown): AvatarAccessory {
+  if (value === 'glasses') return 'round-glasses';
+  if (value === 'hat') return 'baseball-cap';
+  return ACCESSORIES.includes(value as AvatarAccessory)
+    ? (value as AvatarAccessory)
+    : 'none';
 }
 
 export function jsonToConfig(json: unknown): AvatarConfig {
@@ -94,16 +144,18 @@ export function jsonToConfig(json: unknown): AvatarConfig {
     const o = json as Record<string, unknown>;
     return {
       skinTone: typeof o.skinTone === 'string' ? o.skinTone : '#f5c5a0',
-      hairStyle: typeof o.hairStyle === 'number' ? o.hairStyle : 1,
+      hairStyle: numberInRange(o.hairStyle, 1, HAIR_STYLE_COUNT, 1),
       hairColor: typeof o.hairColor === 'string' ? o.hairColor : '#111',
-      topStyle: typeof o.topStyle === 'number' ? o.topStyle : 1,
+      topStyle: numberInRange(o.topStyle, 1, TOP_STYLE_COUNT, 1),
       topColor: typeof o.topColor === 'string' ? o.topColor : '#2a4fd6',
+      bottomStyle: BOTTOM_STYLES.includes(o.bottomStyle as AvatarBottomStyle)
+        ? (o.bottomStyle as AvatarBottomStyle)
+        : 'jeans',
+      bottomColor: typeof o.bottomColor === 'string' ? o.bottomColor : '#315b96',
       eyeExpression: EXPRESSIONS.includes(o.eyeExpression as AvatarConfig['eyeExpression'])
         ? (o.eyeExpression as AvatarConfig['eyeExpression'])
         : 'neutral',
-      accessory: ACCESSORIES.includes(o.accessory as AvatarConfig['accessory'])
-        ? (o.accessory as AvatarConfig['accessory'])
-        : 'none',
+      accessory: normalizeAccessory(o.accessory),
     };
   }
   return randomAvatarConfig();

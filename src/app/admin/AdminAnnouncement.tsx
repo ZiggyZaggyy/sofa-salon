@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useLocale } from '@/components/LocaleProvider';
+import { getVenueDateTimeParts } from '@/lib/screening-datetime';
 
 type ScreeningRow = {
   id: string;
@@ -18,12 +19,13 @@ type ScreeningRow = {
 const WEEKDAY_ZH = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
 function formatScreeningDateTime(iso: string): string {
-  const d = new Date(iso);
-  const month = d.getMonth() + 1;
-  const day = d.getDate();
-  const weekday = WEEKDAY_ZH[d.getDay()];
-  const hour = d.getHours();
-  const minute = d.getMinutes();
+  const parts = getVenueDateTimeParts(iso);
+  if (!parts) return iso;
+  const weekdayIndex = new Date(
+    Date.UTC(parts.year, parts.month - 1, parts.day)
+  ).getUTCDay();
+  const weekday = WEEKDAY_ZH[weekdayIndex];
+  const { month, day, hour, minute } = parts;
   let period: string;
   let h: number;
   if (hour >= 18) {
@@ -67,7 +69,7 @@ function buildAnnouncementWithSignup(screenings: ScreeningRow[], registrationLin
     const label = s.director ? `${s.director}《${s.title}》` : `《${s.title}》`;
     const full = s.reservedCount >= s.capacity;
     const status = full
-      ? '报名已满，可加入 Waiting List'
+      ? '报名已满，可加入候补名单'
       : `已报名 ${s.reservedCount} 位`;
     lines.push(`* ${label}：${status}`);
   }

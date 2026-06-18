@@ -56,7 +56,7 @@ sofa-salon/
 
 This app is designed to run against **your** infrastructure — do not point a public fork at a production database that holds real guest data. This repository does not include a hosted demo or shared database — each deployment uses its own Supabase project.
 
-1. **Supabase** — Create a project, run `supabase-sql/` migrations in order (see `supabase-sql/README.md`), and set `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`. For waitlist promotion, admin attendance, and some cron paths, also set `SUPABASE_SERVICE_ROLE_KEY` (server-only).
+1. **Supabase** — Create a project, run `supabase-sql/` migrations in order (see `supabase-sql/README.md`), and set `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`. For waitlist promotion, admin attendance, and some cron paths, also set `SUPABASE_SERVICE_ROLE_KEY` to a server-only `sb_secret_...` key (preferred) or the legacy `service_role` JWT.
 2. **Auth** — Enable Google (or other providers) in Supabase; set Site URL and redirect URLs to your app origin.
 3. **Resend (optional)** — Sign up at [resend.com](https://resend.com), verify a sending domain, then set `RESEND_API_KEY` and `EMAIL_FROM`. Without Resend, bookings still work; confirmation/reminder emails are skipped.
 4. **Host contact (optional)** — Set `HOST_CONTACT_EMAIL` for the `/contact` form.
@@ -208,7 +208,7 @@ See **`TESTING.md`** for each file's scope and how to add tests.
 
 ## 7. Code and conventions
 
-- **Deployment identity:** Define app, archive, navigation attribution, host references, and receipt values through `.env.local`; `src/lib/config.ts` is the single source of truth.
+- **Deployment identity:** Define app, navigation attribution, host references, and receipt values through `.env.local`; `src/lib/config.ts` is the single source of truth.
 - **Env:** Use `process.env.*`; only `NEXT_PUBLIC_*` is available in the browser.
 - **Naming:** Prefer clear names (`screeningId`, `userId`, `seatKey`).
 - **SQL:** Single source of truth in `supabase-sql/`; run in numeric order.

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useLocale } from '@/components/LocaleProvider';
+import { formatScreeningInVenue } from '@/lib/screening-datetime';
 
 export interface PastScreening {
   screeningId: string;
@@ -21,13 +22,17 @@ function StarRow({
   value,
   onChange,
   disabled,
+  ariaLabel,
+  starAriaLabel,
 }: {
   value: number;
   onChange: (v: number) => void;
   disabled?: boolean;
+  ariaLabel: string;
+  starAriaLabel: string;
 }) {
   return (
-    <div className="flex gap-0.5" role="group" aria-label="Rating">
+    <div className="flex gap-0.5" role="group" aria-label={ariaLabel}>
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
@@ -35,7 +40,7 @@ function StarRow({
           disabled={disabled}
           onClick={() => onChange(star)}
           className="text-lg leading-none p-0.5 min-w-[28px] min-h-[28px] disabled:opacity-60 transition-opacity focus:outline-none focus:ring-1 focus:ring-[#e8c84a]"
-          aria-label={`${star} star${star > 1 ? 's' : ''}`}
+          aria-label={starAriaLabel.replace('{n}', String(star))}
         >
           <span className={star <= value ? 'text-[#e8c84a]' : 'text-[#444444]'}>
             {star <= value ? '★' : '☆'}
@@ -48,7 +53,7 @@ function StarRow({
 
 export default function WatchHistory({ items }: Props) {
   const router = useRouter();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [localRatings, setLocalRatings] = useState<Record<string, number>>(() => {
     const o: Record<string, number> = {};
     items.forEach((i) => {
@@ -122,12 +127,16 @@ export default function WatchHistory({ items }: Props) {
             >
               <p className="font-mono text-[13px] text-[#e8e4dc]">{item.title}</p>
               <p className="font-mono text-[10px] text-[#666] mt-0.5">
-                {new Date(item.screeningAt).toLocaleDateString(undefined, {
+                {formatScreeningInVenue(
+                  item.screeningAt,
+                  locale === 'zh' ? 'zh-CN' : 'en-GB',
+                  {
                   weekday: 'short',
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
-                })}
+                  }
+                )}
               </p>
               <p className="font-mono text-[10px] tracking-wider text-[#888888] mt-2">
                 {t.profile.rateFilmQuality}
@@ -138,6 +147,8 @@ export default function WatchHistory({ items }: Props) {
                   value={displayStars}
                   onChange={(v) => saveRating(item.screeningId, v, current)}
                   disabled={submitting === item.screeningId}
+                  ariaLabel={t.profile.ratingAria}
+                  starAriaLabel={t.profile.ratingStarAria}
                 />
                 {current != null && (
                   <span className="font-mono text-[10px] text-[#666]">

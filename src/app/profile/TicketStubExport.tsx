@@ -4,6 +4,7 @@ import { useRef, useCallback, useState, useEffect } from 'react';
 import { useLocale } from '@/components/LocaleProvider';
 import { APP_NAME_PARTS } from '@/lib/config';
 import type { PastScreening } from './WatchHistory';
+import { formatScreeningInVenue } from '@/lib/screening-datetime';
 
 interface Props {
   items: PastScreening[];
@@ -30,6 +31,7 @@ export default function TicketStubExport({ items }: Props) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const isMobile = useIsMobile();
+  const appName = APP_NAME_PARTS.join('');
 
   const generateImage = useCallback(async (): Promise<string | null> => {
     if (!ref.current || items.length === 0) return null;
@@ -67,7 +69,7 @@ export default function TicketStubExport({ items }: Props) {
         try {
           await navigator.share({
             files: [file],
-            title: 'Zigigraph watch history',
+            title: `${appName} ${t.profile.watchHistory}`,
           });
           return;
         } catch {
@@ -78,7 +80,7 @@ export default function TicketStubExport({ items }: Props) {
     } finally {
       setGenerating(false);
     }
-  }, [generateImage]);
+  }, [appName, generateImage, t.profile.watchHistory]);
 
   if (items.length === 0) return null;
 
@@ -93,8 +95,6 @@ export default function TicketStubExport({ items }: Props) {
       : hours > 0
         ? `${hours} h ${mins} min`
         : `${mins} min`;
-
-  const appName = APP_NAME_PARTS.join('');
 
   return (
     <>
@@ -152,12 +152,15 @@ export default function TicketStubExport({ items }: Props) {
                 </div>
                 <div className="p-4 pt-3">
                   {items.map((item, i) => {
-                    const d = new Date(item.screeningAt);
-                    const dateStr = d.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-GB', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    });
+                    const dateStr = formatScreeningInVenue(
+                      item.screeningAt,
+                      locale === 'zh' ? 'zh-CN' : 'en-GB',
+                      {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      }
+                    );
                     const stars = item.rating != null ? item.rating : 0;
                     const starStr = '★'.repeat(stars) + '☆'.repeat(5 - stars);
                     return (
@@ -181,7 +184,7 @@ export default function TicketStubExport({ items }: Props) {
                 {totalMinutes > 0 && (
                   <div className="p-4 pt-2 border-t border-[#2a2a2a] text-center">
                     <p className="text-[10px] text-[#666] uppercase tracking-[0.2em]">
-                      {t.profile.timeSpentHere}
+                      {t.profile.timeSpentHere.replace('{appName}', appName)}
                     </p>
                     <p className="text-[14px] text-[#e8c84a] mt-1 font-medium tracking-wide">
                       {totalTimeLabel}

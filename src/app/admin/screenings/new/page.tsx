@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation';
 import BackButton from '@/components/BackButton';
 import { useLocale } from '@/components/LocaleProvider';
 import { ALT_LOCALE_MIGRATION_ERROR_KEY } from '@/lib/screening-alt-locale-schema';
+import {
+  VENUE_TIMEZONE,
+  venueDatetimeLocalToIso,
+} from '@/lib/screening-datetime';
 
 interface Room {
   id: string;
@@ -49,7 +53,7 @@ export default function NewScreeningPage() {
       body: JSON.stringify({
         title,
         description,
-        screening_at: new Date(screeningAt).toISOString(),
+        screening_at: venueDatetimeLocalToIso(screeningAt),
         room_id: roomId || null,
         waitlist_mode: waitlistMode,
         year: year ? parseInt(year, 10) : null,
@@ -68,7 +72,7 @@ export default function NewScreeningPage() {
       setError(
         data.errorKey === ALT_LOCALE_MIGRATION_ERROR_KEY
           ? t.admin.altLocaleMigrationRequired
-          : (data.error ?? 'Create failed')
+          : t.admin.createFailed
       );
       return;
     }
@@ -89,21 +93,21 @@ export default function NewScreeningPage() {
       <form onSubmit={submit} className="space-y-6">
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
-            Title
+            {t.admin.screeningTitle}
           </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
-            placeholder="e.g. Chungking Express"
+            placeholder={t.admin.screeningTitlePlaceholder}
             required
             style={{ borderRadius: 0 }}
           />
         </div>
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
-            Date & time
+            {t.admin.screeningDateTime.replace('{timezone}', VENUE_TIMEZONE)}
           </label>
           <input
             type="datetime-local"
@@ -116,14 +120,14 @@ export default function NewScreeningPage() {
         </div>
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
-            Year (optional)
+            {t.admin.screeningYear}
           </label>
           <input
             type="number"
             value={year}
             onChange={(e) => setYear(e.target.value)}
             className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
-            placeholder="e.g. 1994"
+            placeholder={t.admin.screeningYearPlaceholder}
             min="1900"
             max="2100"
             style={{ borderRadius: 0 }}
@@ -131,14 +135,14 @@ export default function NewScreeningPage() {
         </div>
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
-            Director (optional)
+            {t.admin.screeningDirector}
           </label>
           <input
             type="text"
             value={director}
             onChange={(e) => setDirector(e.target.value)}
             className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
-            placeholder="e.g. Wong Kar-wai"
+            placeholder={t.admin.screeningDirectorPlaceholder}
             style={{ borderRadius: 0 }}
           />
         </div>
@@ -151,7 +155,7 @@ export default function NewScreeningPage() {
             value={titleEn}
             onChange={(e) => setTitleEn(e.target.value)}
             className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
-            placeholder="e.g. Chungking Express"
+            placeholder={t.admin.screeningTitlePlaceholder}
             style={{ borderRadius: 0 }}
           />
           <p className="font-mono text-[11px] text-[#555] mt-1.5">{t.admin.altLanguageTitleHint}</p>
@@ -165,34 +169,34 @@ export default function NewScreeningPage() {
             value={directorEn}
             onChange={(e) => setDirectorEn(e.target.value)}
             className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
-            placeholder="e.g. Wong Kar-wai"
+            placeholder={t.admin.screeningDirectorPlaceholder}
             style={{ borderRadius: 0 }}
           />
           <p className="font-mono text-[11px] text-[#555] mt-1.5">{t.admin.altLanguageDirectorHint}</p>
         </div>
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
-            Duration in minutes (optional)
+            {t.admin.screeningDuration}
           </label>
           <input
             type="number"
             value={durationMinutes}
             onChange={(e) => setDurationMinutes(e.target.value)}
             className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
-            placeholder="e.g. 102"
+            placeholder={t.admin.screeningDurationPlaceholder}
             min="1"
             style={{ borderRadius: 0 }}
           />
         </div>
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
-            Description (optional)
+            {t.admin.screeningDescription}
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[80px] outline-none focus:border-[#e8c84a] placeholder:text-[#444444]"
-            placeholder="Film details, notes..."
+            placeholder={t.admin.screeningDescriptionPlaceholder}
             style={{ borderRadius: 0 }}
           />
         </div>
@@ -240,7 +244,7 @@ export default function NewScreeningPage() {
         </div>
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
-            Room
+            {t.admin.screeningRoom}
           </label>
           <select
             value={roomId}
@@ -248,7 +252,7 @@ export default function NewScreeningPage() {
             className="w-full bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e4dc] font-mono text-[13px] px-4 py-3 min-h-[44px] outline-none focus:border-[#e8c84a]"
             style={{ borderRadius: 0 }}
           >
-            <option value="">— Select room —</option>
+            <option value="">{t.admin.screeningSelectRoom}</option>
             {rooms.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name}
@@ -258,7 +262,7 @@ export default function NewScreeningPage() {
         </div>
         <div>
           <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-[#888888] mb-2">
-            Waitlist mode
+            {t.admin.waitlistMode}
           </label>
           <div className="flex gap-2">
             <button
@@ -271,7 +275,7 @@ export default function NewScreeningPage() {
               }`}
               style={{ borderRadius: 0 }}
             >
-              Auto-promote
+              {t.admin.waitlistAuto}
             </button>
             <button
               type="button"
@@ -283,13 +287,13 @@ export default function NewScreeningPage() {
               }`}
               style={{ borderRadius: 0 }}
             >
-              Manual
+              {t.admin.waitlistManual}
             </button>
           </div>
           <p className="font-mono text-[13px] text-[#444444] mt-1">
             {waitlistMode === 'auto'
-              ? "When a seat is cancelled, the first person waiting is moved up automatically."
-              : "You choose who to promote from the admin panel."}
+              ? t.admin.waitlistAutoHint
+              : t.admin.waitlistManualHint}
           </p>
         </div>
         <button

@@ -8,10 +8,7 @@ import { useEffect, useState } from 'react';
 import {
   APP_NAME_PARTS,
   APP_TAGLINE,
-  DEVELOPER_NAME,
-  DEVELOPER_URL,
-  PAST_SCREENINGS_URL_EN,
-  PAST_SCREENINGS_URL_ZH,
+  DEVELOPERS,
 } from '@/lib/config';
 import { useLocale } from '@/components/LocaleProvider';
 import AvatarSVG from '@/components/AvatarSVG';
@@ -102,47 +99,48 @@ export default function NavBar() {
     }`;
 
   const pastScreeningsNavLink = (extraClass = '', onNavigate?: () => void) => {
-    const href = locale === 'zh' ? PAST_SCREENINGS_URL_ZH : PAST_SCREENINGS_URL_EN;
-    if (!href) return null;
-    const isExternal = href.startsWith('http://') || href.startsWith('https://');
-    const className = linkClass(!isExternal && !!pathname?.startsWith(href)) + extraClass;
-    if (isExternal) {
-      return (
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={className}
-          onClick={onNavigate}
-        >
-          {t.nav.pastScreenings}
-        </a>
-      );
-    }
     return (
-      <Link href={href} className={className} onClick={onNavigate}>
+      <Link
+        href="/past-screenings"
+        className={linkClass(!!pathname?.startsWith('/past-screenings')) + extraClass}
+        onClick={onNavigate}
+      >
         {t.nav.pastScreenings}
       </Link>
     );
   };
 
   const developerNavLink = (extraClass = '', onNavigate?: () => void) => {
-    if (!DEVELOPER_NAME) return null;
-    const className = linkClass(false) + extraClass;
-    const label = t.nav.developedBy.replace('{name}', DEVELOPER_NAME);
-    if (!DEVELOPER_URL) {
-      return <span className={className}>{label}</span>;
-    }
+    if (DEVELOPERS.length === 0) return null;
     return (
-      <a
-        href={DEVELOPER_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={className}
-        onClick={onNavigate}
-      >
-        {label}
-      </a>
+      <details className={`relative group ${extraClass}`}>
+        <summary className={`${linkClass(false)} cursor-pointer list-none`}>
+          {t.nav.developers} <span aria-hidden="true">▾</span>
+        </summary>
+        <div className="static md:absolute md:right-0 md:top-full min-w-[150px] border border-[#2a2a2a] bg-[#0f0f0f] py-1 md:shadow-lg">
+          {DEVELOPERS.map((developer) =>
+            developer.url ? (
+              <a
+                key={`${developer.name}-${developer.url}`}
+                href={developer.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block whitespace-nowrap px-3 py-2 font-mono text-[10px] tracking-[0.14em] uppercase text-[#888888] hover:bg-[#161616] hover:text-[#e8c84a]"
+                onClick={onNavigate}
+              >
+                {developer.name}
+              </a>
+            ) : (
+              <span
+                key={developer.name}
+                className="block whitespace-nowrap px-3 py-2 font-mono text-[10px] tracking-[0.14em] uppercase text-[#888888]"
+              >
+                {developer.name}
+              </span>
+            )
+          )}
+        </div>
+      </details>
     );
   };
 
@@ -234,7 +232,7 @@ export default function NavBar() {
                 onClick={() => setMobileMenuOpen((o) => !o)}
                 className="min-w-[44px] min-h-[44px] flex flex-col items-center justify-center gap-1.5 text-[#888888] hover:text-[#e8c84a]"
                 aria-expanded={mobileMenuOpen}
-                aria-label="Menu"
+                aria-label={t.nav.menu}
               >
                 <span className="w-5 h-0.5 bg-current" />
                 <span className="w-5 h-0.5 bg-current" />
@@ -333,7 +331,7 @@ export default function NavBar() {
                 onClick={() => setMobileMenuOpen((o) => !o)}
                 className="min-w-[44px] min-h-[44px] flex flex-col items-center justify-center gap-1.5 text-[#888888] hover:text-[#e8c84a]"
                 aria-expanded={mobileMenuOpen}
-                aria-label="Menu"
+                aria-label={t.nav.menu}
               >
                 <span className="w-5 h-0.5 bg-current" />
                 <span className="w-5 h-0.5 bg-current" />
