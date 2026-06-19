@@ -1,5 +1,10 @@
 # ZiggyGraph / Sofa Salon
 
+> Sofa Salon was originally created by [Shi Qianyi](https://eveshi.com/).
+> This repository is a public open-source fork with ongoing feature development.
+
+Public deployments should include visible attribution to Shi Qianyi as the original creator.
+
 Open-source under the [MIT License](LICENSE). See [SECURITY.md](SECURITY.md).
 
 ## What is this project?
