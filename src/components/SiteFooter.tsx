@@ -13,7 +13,7 @@ export default function SiteFooter() {
             rel="noopener noreferrer"
             className="text-[#e8c84a] hover:underline"
           >
-            Shi Qianyi
+            Eve Shi
           </a>
           .
         </p>
